@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "acumatica": "tsx scripts/acumatica/cli.ts",
+    "printing-press-ts": "tsx scripts/printing-press-ts/scaffold.ts",
     "sps-bol": "tsx scripts/sps-commerce/cli.ts"
   },
   "dependencies": {

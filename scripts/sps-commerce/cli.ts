@@ -3,8 +3,17 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import JSZip from "jszip";
 import XLSX from "xlsx";
+import { printJson, probeBearerStatus, showAuthSetup, writeConfig } from "../../lib/printing-press-ts/runtime.js";
 
 type Row = Record<string, string>;
+
+const SPS_COMMERCE = {
+  service: "sps-commerce",
+  baseUrl: "https://api.spscommerce.com",
+  tokenEnvVars: ["SPS_COMMERCE_ACCESS_TOKEN", "SPS_ACCESS_TOKEN"],
+  authKeyUrl: "https://developercenter.spscommerce.com/",
+  authInstructions: "Create or sign into SPS Dev Center and provision OAuth/Auth0 access for the target SPS API. SPS APIs expect bearer tokens on authenticated API requests.",
+};
 
 const RAW_HEADERS = [
   "Name",
@@ -82,9 +91,15 @@ function usage(): void {
   console.log(`Power Smart SPS Commerce CLI
 
 USAGE:
+  npm run sps-bol -- auth setup [--launch]
+  npm run sps-bol -- config --base-url <url> [--token <token>]
+  npm run sps-bol -- status [--probe-url <url>]
   npm run sps-bol -- generate --source <xlsx> --template <docx> --out <dir>
 
 COMMANDS:
+  auth setup Auth/access instructions for SPS Commerce
+  config     Store local SPS Commerce access config
+  status     Validate local bearer-token configuration; optionally probe a user-supplied SPS endpoint
   generate   Normalize SPS export rows, validate required BOL fields, and generate DOCX BOLs.
 `);
 }
@@ -366,6 +381,20 @@ async function generate(args: string[]): Promise<void> {
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   switch (command) {
+    case "auth":
+      if (args[0] === "setup") return showAuthSetup(SPS_COMMERCE, args.includes("--launch"));
+      usage();
+      return;
+    case "config":
+      return printJson({
+        status: "configured",
+        config_path: writeConfig(SPS_COMMERCE, {
+          baseUrl: argValue(args, "--base-url") || SPS_COMMERCE.baseUrl,
+          token: argValue(args, "--token"),
+        }),
+      });
+    case "status":
+      return probeBearerStatus(SPS_COMMERCE, argValue(args, "--probe-url"));
     case "generate":
       return generate(args);
     default:

@@ -26,6 +26,7 @@ The repo now has two command surfaces:
 | CLI | Purpose |
 |---|---|
 | `npm run acumatica -- <command>` | Push warranty and retail order intake into Acumatica. |
+| `npm run sps-bol -- auth setup/status/config` | Set up SPS Commerce bearer-token access in the TypeScript Printing Press style. |
 | `npm run sps-bol -- generate ...` | Run SPS Commerce export cleanup, validation, and BOL DOCX generation for the third SOW. |
 
 ## Quick Start
@@ -74,6 +75,9 @@ npm run sps-bol -- generate \
 | Command | Description |
 |---------|-------------|
 | `generate` | Read SPS workbook `Sheet1` and destination/reference `Sheet2`, normalize rows, validate required BOL fields, generate one DOCX BOL per valid row, and write CSV/JSON QA artifacts. |
+| `auth setup` | Print SPS Commerce Dev Center/Auth0 bearer-token setup instructions. |
+| `config` | Store local SPS Commerce base URL and optional bearer token. |
+| `status` | Validate bearer-token availability; optionally probe a supplied SPS endpoint. |
 
 Required arguments:
 

@@ -2,7 +2,26 @@
 
 Agent-first CLI for the third Power Smart SOW workflow: SPS Commerce export cleanup, BOL validation, and bill-of-lading DOCX generation.
 
-## Command
+Built using the repo's TypeScript Printing Press runtime in `lib/printing-press-ts/runtime.ts`.
+
+## Access Commands
+
+SPS Commerce's public standards state that SPS APIs use Auth0/OAuth2 bearer-token authentication. The public API reference workspace requires sign-in, so the CLI supports local bearer-token setup and optional probing of account-specific endpoints without hard-coding private API paths.
+
+```bash
+npm run sps-bol -- auth setup
+npm run sps-bol -- config --base-url "https://api.spscommerce.com" --token "$SPS_COMMERCE_ACCESS_TOKEN"
+npm run sps-bol -- status
+npm run sps-bol -- status --probe-url "https://customer-specific.sps.endpoint/..."
+```
+
+Credential lookup order:
+
+1. `SPS_COMMERCE_ACCESS_TOKEN`
+2. `SPS_ACCESS_TOKEN`
+3. Local config file at `~/.config/sps-commerce.json`
+
+## BOL Command
 
 ```bash
 npm run sps-bol -- generate \
@@ -69,3 +88,4 @@ Generated BOLs:
 
 - DOCX QA is structural unless LibreOffice/soffice is available for visual rendering.
 - The command intentionally stops at document generation and manifest output; carrier portal submission is not implemented.
+- Account-specific SPS API endpoints require customer-provisioned SPS Dev Center access and should be supplied via `--probe-url` or future workflow-specific commands.
