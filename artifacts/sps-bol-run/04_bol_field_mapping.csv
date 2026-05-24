@@ -1,0 +1,17 @@
+template_placeholder,payload_field,description,requirement
+«Name»,name,Ship-to customer or store name,required
+«Address_1»,address_1,Ship-to street address line 1,required
+«Address_2»,address_2,Ship-to street address line 2,optional
+«City»,city,Ship-to city,required
+«State»,state,Ship-to state abbreviation,required
+«Zip»,zip,"Ship-to ZIP, preserved with leading zeros",required
+«Phone»,phone,Ship-to phone,optional
+«PO_»,po,Customer purchase order,required
+«QTY»,qty,Carton/package quantity,required
+«Weight»,weight,Shipment weight,required
+«Shipping_Message»,shipping_message,Special instructions,optional
+«Carrier»,carrier,Carrier name,required
+«BOL_Number»,bol_number,Bill of lading/SID number,required
+«Customer_Order_No»,customer_order_no,Additional shipper info,optional
+«Pallet»,pallet,Pallet count,optional
+«Model»,model,Commodity model text,optional

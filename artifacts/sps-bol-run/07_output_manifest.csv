@@ -1,0 +1,5 @@
+row_id,bol_number,po,output_docx,preview_text,status
+1,SID 232161177,1134488129,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/generated_bols/SID_232161177_1134488129.docx,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/previews/SID_232161177_1134488129.txt,generated
+2,SID 232161181,1134490242,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/generated_bols/SID_232161181_1134490242.docx,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/previews/SID_232161181_1134490242.txt,generated
+3,SID 232161087,1134495882,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/generated_bols/SID_232161087_1134495882.docx,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/previews/SID_232161087_1134495882.txt,generated
+4,SID 232161179,1134522652,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/generated_bols/SID_232161179_1134522652.docx,/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/previews/SID_232161179_1134522652.txt,generated

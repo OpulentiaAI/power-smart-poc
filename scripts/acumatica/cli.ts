@@ -173,13 +173,29 @@ interface SalesOrderInput {
   productCategory: string;
   modelSku: string;
   serialNumber: string;
+  customerId?: string;
 }
 
-async function pushSalesOrder(order: SalesOrderInput): Promise<ApiResponse> {
+function resolveCustomerId(order: SalesOrderInput): { id: string; source: string } {
+  if (order.customerId) return { id: order.customerId, source: "input" };
+
+  const retailer = `${order.platform} ${order.customerName}`.toLowerCase();
+  if (retailer.includes("home") && retailer.includes("depot")) {
+    const isCanada = /\b(on|ab|bc|mb|nb|nl|ns|nt|nu|pe|qc|sk|yt)\b/i.test(order.address);
+    return { id: isCanada ? "C00006" : "C00008", source: isCanada ? "home_depot_canada" : "home_depot_us" };
+  }
+  if (retailer.includes("amazon")) return { id: "C00002", source: "amazon" };
+  if (retailer.includes("walmart")) return { id: "C00009", source: "walmart" };
+
+  return { id: "C00001", source: "default_vendor_central" };
+}
+
+async function pushSalesOrder(order: SalesOrderInput, customerId?: string): Promise<ApiResponse> {
+  const resolvedCustomer = customerId || resolveCustomerId(order).id;
   const body = {
     OrderType: wrap("SO"),
     OrderNbr: wrap("<NEW>"),
-    CustomerID: wrap(order.email),
+    CustomerID: wrap(resolvedCustomer),
     CustomerOrder: wrap(order.orderNumber),
     Date: wrap(order.orderedDate),
     RequestedOn: wrap(order.orderedDate),
@@ -374,8 +390,8 @@ async function main(): Promise<void> {
       const data = await readStdin();
       if (!data) { console.error(JSON.stringify({ error: "Pipe JSON to stdin" })); process.exit(1); }
       const order = JSON.parse(data);
-      const cust = await pushCustomer(order.customerName, order.email, order.phone, order.address);
-      console.error(`Customer: ${cust.id} (${cust.status})`);
+      const cust = resolveCustomerId(order);
+      console.error(JSON.stringify({ customer: cust }));
       const result = await pushSalesOrder(order, cust.id);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.success ? 0 : 1);
@@ -391,9 +407,8 @@ async function main(): Promise<void> {
       const data = await readStdin();
       if (!data) { console.error(JSON.stringify({ error: "Pipe {order, warranty} JSON to stdin" })); process.exit(1); }
       const payload: { order: SalesOrderInput; warranty: WarrantyCaseInput } = JSON.parse(data);
-      // Auto-create Customer
-      const cust = await pushCustomer(payload.order.customerName, payload.order.email, payload.order.phone, payload.order.address);
-      console.error(`Customer: ${cust.id} (${cust.status})`);
+      const cust = resolveCustomerId(payload.order);
+      console.error(JSON.stringify({ customer: cust }));
       console.log("=== PUSHING ORDER ===");
       const orderResult = await pushSalesOrder(payload.order, cust.id);
       console.log(JSON.stringify(orderResult, null, 2));

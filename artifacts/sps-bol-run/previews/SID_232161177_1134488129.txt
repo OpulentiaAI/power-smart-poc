@@ -1,0 +1,173 @@
+Date: 3/30/2026
+| BILL OF LADING
+|
+| SHIP FROM
+|
+| Name: Amerisun Inc.
+| Bill of Lading Number:
+SID 232161177
+| Address: 925 W Thorndale Ave.
+|
+| City/State/Zip: Itasca, IL 60143
+| BAR CODE SPACE
+| SID#:
+| FOB:
+|
+| SHIP TO
+| CARRIER NAME: ESTES EXPRESS LINES
+| Name: Home Depot Store #6777
+| Location #
+| Trailer number:
+| Address: 2500 HIGHWAY 155 SOUTH
+| Seal number(s):
+| City/State/Zip: LOCUST GROVE, GA, 30248
+| SCAC:
+| CID#:
+| FOB: X
+| Pro number:
+| THIRD PARTY FREIGHT CHARGES BILL TO:
+|
+| Name:
+| BAR CODE SPACE
+| Address:
+|
+| City/State/Zip:
+| Freight Charge Terms: (freight charges are prepaid unless marked otherwise)
+| SPECIAL INSTRUCTIONS:
+| Prepaid __
+| Collect _x__
+| 3rd Party __
+|
+|
+(check box)
+| Master Bill of Lading: with attached underlying Bills of Lading
+| CUSTOMER ORDER INFORMATION
+| CUSTOMER ORDER NUMBER
+| # PKGS
+| WEIGHT
+| PALLET/SLIP
+(CIRCLE ONE)
+| ADDITIONAL SHIPPER INFO
+| 1134488129
+| 70
+| 5110
+| Y
+| N
+| V8721S 70
+|
+|
+|
+| Y
+| N
+|
+|
+|
+|
+| Y
+| N
+|
+|
+|
+|
+| Y
+| N
+|
+| GRAND TOTAL
+| 70
+| 5110
+|
+|
+|
+| CARRIER INFORMATION
+| HANDLING UNIT
+| PACKAGE
+|
+|
+| COMMODITY DESCRIPTION
+| LTL ONLY
+| QTY
+| TYPE
+| QTY
+| TYPE
+| WEIGHT
+| H.M.
+(X)
+| Commodities requiring special or additional care or attention in handling or stowing must be so marked and packaged as to ensure safe transportation with ordinary care.
+See Section 2(e) of NMFC Item 360
+| NMFC #
+| CLASS
+| 6
+| Pallet
+| 70
+| Carton
+| 5110
+|
+| POWERSMART LAWNMOWER
+|
+| 100
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+| RECEIVING
+|
+|
+|
+|
+|
+|
+| STAMP SPACE
+|
+|
+|
+|
+|
+|
+|
+|
+|
+| 6
+| Pallet
+| 70
+| Carton
+| 5110
+|
+| GRAND TOTAL
+|
+|
+| Where the rate is dependent on value, shippers are required to state specifically in writing the agreed or declared value of the property as follows:
+| COD Amount: $ ______________________
+| “The agreed or declared value of the property is specifically stated by the shipper to be not exceeding
+__________________ per ___________________.”
+| Fee Terms: Collect: Prepaid:
+Customer check acceptable:
+| NOTE Liability Limitation for loss or damage in this shipment may be applicable. See 49 U.S.C. 14706(c)(1)(A) and (B).
+| RECEIVED, subject to individually determined rates or contracts that have been agreed upon in writing between the carrier and shipper, if applicable, otherwise to the rates, classifications and rules that have been established by the carrier and are available to the shipper, on request, and to all applicable state and federal regulations.
+| The carrier shall not make delivery of this shipment without payment of freight and all other lawful charges.
+_______________________________________Shipper Signature
+| SHIPPER SIGNATURE / DATE
+| Trailer Loaded:
+| Freight Counted:
+| CARRIER SIGNATURE / PICKUP DATE
+| This is to certify that the above named materials are properly classified, described, packaged, marked and labeled, and are in proper condition for transportation according to the applicable regulations of the U.S. DOT.
+| X By Shipper
+By Driver
+| X By Shipper
+By Driver/pallets said to contain
+| Carrier acknowledges receipt of packages and required placards. Carrier certifies emergency response information was made available and/or carrier has the U.S. DOT emergency response guidebook or equivalent documentation in the vehicle.
+|
+|
+| By Driver/Pieces
+| Property described above is received in good order, except as noted.
+|
