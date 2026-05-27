@@ -40,6 +40,23 @@ npm run sps-bol -- generate \
   --out "./artifacts/sps-bol-run"
 ```
 
+## Required fields checklist (per BOL row)
+
+| Field | Required | Source |
+|-------|----------|--------|
+| name | ✓ | Ship-to customer/store name |
+| address_1 | ✓ | Ship-to street address |
+| city | ✓ | Ship-to city |
+| state | ✓ | Ship-to state |
+| zip | ✓ | Ship-to ZIP |
+| po | ✓ | Customer purchase order |
+| qty | ✓ | Carton/package quantity |
+| weight | ✓ | Shipment weight |
+| carrier | ✓ | Carrier name |
+| bol_number | ✓ | Bill of lading number |
+| pallet | ✓ | Pallet count |
+| customer_order_no | optional | Additional shipper info |
+
 | Artifact | Purpose |
 |----------|---------|
 | `01_sps_export_raw.csv` | Raw export columns |
@@ -47,9 +64,10 @@ npm run sps-bol -- generate \
 | `03_normalized_orders.csv` | Normalized snake_case rows |
 | `04_bol_field_mapping.csv` | Template ↔ payload mapping |
 | `05_bol_payload.csv` | Rows ready for merge |
-| `06_validation_report.csv` | Per-row valid/invalid |
+| `06_validation_report.csv` | Per-row valid/invalid (+ missing fields checklist) |
 | `07_output_manifest.csv` | Generated DOCX paths |
 | `08_docx_qa_report.csv` | Preview/QA status |
+| `09_bol_arithmetic.csv` | Entity-specific pallet/weight calculations |
 | `automation_summary.json` | Run metadata |
 | `generated_bols/*.docx` | One BOL per valid row |
 | `previews/*.txt` | Text previews |
@@ -95,7 +113,38 @@ diff -q artifacts/sps-bol-run/06_validation_report.csv \
 | Validation parity | Same number of valid rows (or documented delta) |
 | BOL numbers | SID/BOL numbers align with source xlsx |
 
-## Exception loop
+## Entity-specific arithmetic (per-row pallet calculations)
+
+Each Home Depot store has its own cartons-per-pallet rate from operations reference.
+The `09_bol_arithmetic.csv` artifact validates pallet logic per store.
+
+| Store | Entity qty/pallet rate |
+|-------|------------------------|
+| #6777 | 12 |
+| #6760 | 12 |
+| #6707 | 11.5 |
+| #5857 | 11 |
+
+Formula: `expected_pallet_count = ceil(total_cartons / entity_rate)`
+
+| BOL section | Field | Source column |
+|-------------|-------|---------------|
+| CUSTOMER ORDER INFORMATION | # PKGS | customer_order_pkgs (qty) |
+| CUSTOMER ORDER INFORMATION | WEIGHT | grand_total_weight_lbs |
+| CUSTOMER ORDER INFORMATION | PALLET | handling_unit_pallet_qty |
+| CARRIER INFORMATION | HANDLING UNIT QTY | handling_unit_pallet_qty |
+| CARRIER INFORMATION | PACKAGE QTY | package_carton_qty |
+| CARRIER INFORMATION | PACKAGE WEIGHT | grand_total_weight_lbs |
+| GRAND TOTAL | Pallet/Carton/Weight | Same values repeated |
+
+Golden validation (SID 232161177):
+- customer_order_pkgs: 70
+- handling_unit_pallet_qty: 6
+- grand_total_weight_lbs: 5110
+- cartons_per_pallet: 11.67
+- notes: "partial final pallet: 10 cartons on last of 6 pallets (12/pallet)"
+
+Config: `fixtures/sps-entity-qty-per-pallet.json`
 
 | Symptom | Action |
 |---------|--------|

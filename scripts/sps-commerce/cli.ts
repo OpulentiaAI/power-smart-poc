@@ -4,6 +4,7 @@ import * as path from "node:path";
 import JSZip from "jszip";
 import XLSX from "xlsx";
 import { printJson, probeBearerStatus, showAuthSetup, writeConfig } from "../../lib/printing-press-ts/runtime.js";
+import { arithmeticRows, ARITHMETIC_HEADERS, loadEntityConfig } from "./arithmetic.js";
 
 type Row = Record<string, string>;
 
@@ -356,6 +357,9 @@ async function generate(args: string[]): Promise<void> {
   writeCsv(path.join(outDir, "06_validation_report.csv"), validations, ["row_id", "bol_number", "po", "status", "missing_required_fields", "notes"]);
   writeCsv(path.join(outDir, "07_output_manifest.csv"), manifest, ["row_id", "bol_number", "po", "output_docx", "preview_text", "status"]);
   writeCsv(path.join(outDir, "08_docx_qa_report.csv"), qa, ["output_docx", "unreplaced_placeholders", "structural_preview", "render_status"]);
+  const entityConfig = loadEntityConfig(path.join(import.meta.dirname, "..", "..", "fixtures", "sps-entity-qty-per-pallet.json"));
+  const arithmetic = arithmeticRows(normalized, entityConfig);
+  writeCsv(path.join(outDir, "09_bol_arithmetic.csv"), arithmetic, ARITHMETIC_HEADERS);
 
   const validationStatuses = validations.reduce<Record<string, number>>((acc, row) => {
     acc[row.status] = (acc[row.status] || 0) + 1;

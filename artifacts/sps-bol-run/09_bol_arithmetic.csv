@@ -1,0 +1,5 @@
+row_id,store,entity_rate,customer_order_pkgs,handling_unit_pallet_qty,package_carton_qty,grand_total_pallet_qty,grand_total_carton_qty,grand_total_weight_lbs,cartons_per_pallet,weight_per_carton_lbs,weight_per_pallet_lbs,notes
+,#6777,12,70,6,70,6,70,5110,11.67,73.00,851.67,partial final pallet: 10 cartons on last of 6 pallets (12/pallet)
+,#6760,12,48,4,48,4,48,3044,12.00,63.42,761.00,even pallet fill
+,#6707,11.5,184,16,184,16,184,13432,11.50,73.00,839.50,even pallet fill
+,#5857,11,11,1,11,1,11,743,11.00,67.55,743.00,even pallet fill

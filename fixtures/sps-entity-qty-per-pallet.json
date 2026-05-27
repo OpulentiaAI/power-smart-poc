@@ -1,0 +1,8 @@
+{
+  "stores": {
+    "#6777": { "qty_per_pallet": 12 },
+    "#6760": { "qty_per_pallet": 12 },
+    "#6707": { "qty_per_pallet": 11.5 },
+    "#5857": { "qty_per_pallet": 11 }
+  }
+}

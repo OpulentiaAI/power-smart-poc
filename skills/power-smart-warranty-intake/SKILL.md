@@ -87,6 +87,31 @@ npm run verify-acumatica-ui -- <OrderNbr-optional> <CaseID> <orderNumber> <seria
 
 Inspect `artifacts/ui-verification/03-warranty-cases.png` and JSON `warranty serial` check.
 
+## Warranty lookup + email on miss
+
+When warranty record cannot be found in Acumatica, send registration email template:
+
+```bash
+# Check if serial exists (lookup-warranty)
+npm run acumatica -- lookup-warranty --serial "0012412033380609022"
+
+# If missing, draft email via warranty-intake
+cat <<'EOF' | npm run acumatica -- warranty-intake --out artifacts/outbound-emails
+{"serialNumber":"0019999999999999999","email":"customer@example.com","productCategory":"Snow Blower"}
+EOF
+```
+
+| Flow | Behavior |
+|------|----------|
+| Known serial | Finds existing case CS176XX, no email needed |
+| Unknown serial | Drafts registration email from template |
+
+Templates in `fixtures/warranty-email/`:
+- `lawn-mower-registration.txt` — serial on deck/grass bag flap (ignore engine stickers)
+- `snow-blower-registration.txt` — serial below chute assembly
+
+Artifacts land in `artifacts/outbound-emails/` for Outlook SMTP send.
+
 ## Template reference (from operations email)
 
 Snow blower and lawn mower templates differ only in serial location instructions; both require proof of purchase. Do not invent fields — map exactly what the customer returned.
