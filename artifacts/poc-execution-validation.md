@@ -23,7 +23,25 @@ Evidence: `artifacts/pipeline-results.json`, `artifacts/ui-verification/ui-verif
 
 Output: `artifacts/sps-bol-run/` (artifacts 01–08, `generated_bols/`, `automation_summary.json`).
 
-## Skills
+## SPS BOL
+
+Output: `artifacts/sps-bol-run/` (artifacts 01–09, `generated_bols/`, `automation_summary.json`).
+
+### 09_bol_arithmetic.csv — Entity-specific calculations
+
+| Store | Entity rate | Qty | Pallets | Notes |
+|-------|-------------|-----|---------|-------|
+| #6777 | 12 | 70 | 6 | partial final pallet: 10 cartons (12/pallet) |
+| #6760 | 12 | 48 | 4 | even pallet fill |
+| #6707 | 11.5 | 184 | 16 | even pallet fill |
+| #5857 | 11 | 11 | 1 | even pallet fill |
+
+Formulas:
+- `cartons_per_pallet = qty ÷ pallet`
+- `weight_per_carton = weight ÷ qty`
+- `weight_per_pallet = weight ÷ pallet`
+
+### Skills
 
 - `skills/power-smart-order-intake/SKILL.md`
 - `skills/power-smart-warranty-intake/SKILL.md`
@@ -31,4 +49,10 @@ Output: `artifacts/sps-bol-run/` (artifacts 01–08, `generated_bols/`, `automat
 
 ## OpulentiaAI repo
 
-Push to `OpulentiaAI/power-smart-poc` requires `gh auth login` (current token invalid). Local branch ready after commit on `main` or feature branch.
+Push to `OpulentiaAI/power-smart-poc` completed. Commit fb56cb0 merged to main and pushed.
+
+### Warranty Email Templates
+
+When warranty record not found, email templates in `fixtures/warranty-email/`:
+- `lawn-mower-registration.txt` — serial on deck/grass bag flap
+- `snow-blower-registration.txt` — serial below chute assembly
