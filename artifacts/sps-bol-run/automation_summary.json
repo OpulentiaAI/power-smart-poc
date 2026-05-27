@@ -2,7 +2,7 @@
   "status": "completed",
   "source_xlsx": "/Users/jeremyalston/Downloads/A order BOL template.xlsx",
   "template_docx": "/Users/jeremyalston/Downloads/A BOL template.docx",
-  "output_dir": "/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run",
+  "output_dir": "./artifacts/sps-bol-run",
   "raw_order_rows": 4,
   "destination_reference_rows": 37,
   "normalized_order_rows": 4,
@@ -11,5 +11,5 @@
   "validation_statuses": {
     "valid": 4
   },
-  "manifest": "/Users/jeremyalston/Downloads/power-smart-poc/artifacts/sps-bol-run/07_output_manifest.csv"
+  "manifest": "artifacts/sps-bol-run/07_output_manifest.csv"
 }

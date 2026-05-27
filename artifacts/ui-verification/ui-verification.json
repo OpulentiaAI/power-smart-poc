@@ -1,0 +1,61 @@
+{
+  "orderNbr": "SO574030",
+  "caseId": "CS17615",
+  "customerOrder": "840432706992",
+  "serial": "0012412033380609022",
+  "checks": [
+    {
+      "name": "session",
+      "pass": true,
+      "detail": "https://amerisuninc.acumatica.com/Main?CompanyID=AmeriSun+Inc.+-+Test&ScreenId=CR306000"
+    },
+    {
+      "name": "API sales order",
+      "pass": true,
+      "detail": "840432706992"
+    },
+    {
+      "name": "API customer order",
+      "pass": true,
+      "detail": "840432706992"
+    },
+    {
+      "name": "API warranty case",
+      "pass": true,
+      "detail": "Warranty Claim — Jason Mack — 0012412033380609022"
+    },
+    {
+      "name": "API warranty serial in subject",
+      "pass": true,
+      "detail": "0012412033380609022"
+    },
+    {
+      "name": "UI sales order number",
+      "pass": false,
+      "detail": "SO574030"
+    },
+    {
+      "name": "UI customer order on SO",
+      "pass": false,
+      "detail": "840432706992"
+    },
+    {
+      "name": "UI warranty case id",
+      "pass": false,
+      "detail": "CS17615"
+    },
+    {
+      "name": "UI warranty serial",
+      "pass": false,
+      "detail": "0012412033380609022"
+    }
+  ],
+  "screenshots": [
+    "/Users/jeremyalston/Downloads/power-smart-poc/artifacts/ui-verification/01-after-login.png",
+    "/Users/jeremyalston/Downloads/power-smart-poc/artifacts/ui-verification/02-sales-orders.png",
+    "/Users/jeremyalston/Downloads/power-smart-poc/artifacts/ui-verification/03-warranty-cases.png"
+  ],
+  "passed": true,
+  "apiPassed": true,
+  "uiPassed": false
+}

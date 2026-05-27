@@ -9,6 +9,8 @@
  */
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
+import * as readline from "readline";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -45,7 +47,6 @@ function loadConfig(): AcumaticaConfig {
 
 async function cookieLogin(config: AcumaticaConfig): Promise<string> {
   // Use curl for reliable Set-Cookie capture (Node.js fetch header API is inconsistent)
-  const { execSync } = require("child_process");
   const company = config.company || "AmeriSun Inc. - Test";
   const tmpJar = `/tmp/acumatica-cookie-login-${Date.now()}.txt`;
   try {
@@ -316,7 +317,7 @@ function cmdSetupConnectedApp(): void {
 }
 
 function cmdConfig(): void {
-  const rl = require("readline").createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = (q: string) => new Promise<string>(r => rl.question(q, r));
   (async () => {
     const config: AcumaticaConfig = {

@@ -5,10 +5,14 @@
   "scripts": {
     "acumatica": "tsx scripts/acumatica/cli.ts",
     "printing-press-ts": "tsx scripts/printing-press-ts/scaffold.ts",
-    "sps-bol": "tsx scripts/sps-commerce/cli.ts"
+    "sps-bol": "tsx scripts/sps-commerce/cli.ts",
+    "pipeline": "tsx scripts/acumatica/pipeline.ts",
+    "verify-automation": "tsx scripts/verify-automation.ts",
+    "verify-acumatica-ui": "node scripts/verify-acumatica-ui.mjs"
   },
   "dependencies": {
     "jszip": "^3.10.1",
+    "playwright": "^1.52.0",
     "tsx": "^4.20.6",
     "xlsx": "^0.18.5"
   },

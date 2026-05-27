@@ -135,7 +135,10 @@ async function runPipeline(): Promise<void> {
   };
 
   const combinedPayload = { order: orderInput, warranty: warrantyInput };
-  const payloadPath = "/opulent/workspace/artifacts/acumatica-payload.json";
+  const repoRoot = path.resolve(import.meta.dirname, "../..");
+  const artifactsDir = path.join(repoRoot, "artifacts");
+  fs.mkdirSync(artifactsDir, { recursive: true });
+  const payloadPath = path.join(artifactsDir, "acumatica-payload.json");
   fs.writeFileSync(payloadPath, JSON.stringify(combinedPayload, null, 2));
   const r3 = recordResult("prepare_payloads", true, { payloadPath });
   r3.durationMs = Date.now() - t3;
@@ -147,12 +150,12 @@ async function runPipeline(): Promise<void> {
 
   try {
     const pushResult = execSync(
-      `cat ${payloadPath} | npx tsx scripts/acumatica/cli.ts push-both`,
+      `cat "${payloadPath}" | npm run acumatica -- push-both`,
       {
         encoding: "utf-8",
-        timeout: 30000,
+        timeout: 60000,
         env: { ...process.env, HOME: process.env.HOME || "/root" },
-        cwd: "/opulent/workspace",
+        cwd: repoRoot,
       }
     );
     console.log(pushResult);
@@ -189,7 +192,8 @@ function printSummary(): void {
   }
 
   // Write results for audit
-  const resultsPath = "/opulent/workspace/artifacts/pipeline-results.json";
+  const repoRoot = path.resolve(import.meta.dirname, "../..");
+  const resultsPath = path.join(repoRoot, "artifacts", "pipeline-results.json");
   fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
   console.log(`\nFull results: ${resultsPath}`);
 }
