@@ -485,8 +485,12 @@ async function cmdPushBoth(args: string[]): Promise<void> {
 }
 
 async function cmdLookupOrder(args: string[]): Promise<void> {
-  const orderNbr = flagValue(args, "--order-nbr") || args.find((a) => !a.startsWith("-"));
-  const customerOrder = flagValue(args, "--customer-order");
+  const orderNbrFlag = flagValue(args, "--order-nbr");
+  const customerOrderFlag = flagValue(args, "--customer-order");
+  // Only use a positional argument as an order number when no explicit flag is passed.
+  const positionalArg = orderNbrFlag || customerOrderFlag ? undefined : args.find((a) => !a.startsWith("-"));
+  const orderNbr = orderNbrFlag || positionalArg;
+  const customerOrder = customerOrderFlag;
   let filter: string;
   if (orderNbr) filter = `OrderNbr eq '${orderNbr}'`;
   else if (customerOrder) filter = `CustomerOrder eq '${customerOrder}'`;
