@@ -1,0 +1,16 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+maintenance: |
+  npm install
+  npx playwright install chromium
+
+knowledge:
+  - name: test
+    contents: |
+      npm run verify-automation
+      npm run pipeline
+      npm run sps-bol -- generate --source "intake-pack/assets/A order BOL template.xlsx" --template "intake-pack/assets/A BOL template.docx" --out "artifacts/sps-bol-run"
+      npm run verify-acumatica-ui -- <OrderNbr> <CaseID> <CustomerOrder> <Serial>
+  - name: notes
+    contents: |
+      Configure Acumatica with ~/.acumatica-config.json before running the live order/warranty workflow.
+      The SPS BOL workflow runs offline; the order/warranty workflow needs the AmeriSun Test tenant.
