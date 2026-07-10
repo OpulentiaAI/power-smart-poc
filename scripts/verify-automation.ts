@@ -29,9 +29,10 @@ for (const f of [
   "scripts/acumatica/cli.ts",
   "scripts/sps-commerce/cli.ts",
   "lib/power-smart/extraction.ts",
-  "skills/power-smart-order-intake/SKILL.md",
-  "skills/power-smart-warranty-intake/SKILL.md",
-  "skills/power-smart-sps-bol/SKILL.md",
+  ".agents/skills/power-smart-show-your-work/SKILL.md",
+  ".agents/skills/power-smart-order-intake/SKILL.md",
+  ".agents/skills/power-smart-warranty-intake/SKILL.md",
+  ".agents/skills/power-smart-sps-bol/SKILL.md",
 ]) {
   check(`file ${f}`, fileExists(f));
 }

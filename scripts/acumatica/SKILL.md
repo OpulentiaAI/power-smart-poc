@@ -1,147 +1,71 @@
-/**
- * Power Smart Acumatica CLI — SKILL.md
- *
- * Follows printing-press-library CLI skill pattern.
- * This is the agent-facing instruction set for ps-acumatica.
- *
- * Repo: https://github.com/Git-Godssoldier/power-smart-poc
- * CLI: `npx tsx scripts/acumatica/cli.ts`
- * Auth: Cookie-based session (primary) with OAuth ROPC fallback (requires Connected App)
- * Reference: https://help-2024r2.acumatica.com (Contract-Based REST API)
- *
- * VERIFIED: 2026-05-24 against amerisuninc.acumatica.com Test tenant
- * - Login: working via POST /entity/auth/login with company=AmeriSun Inc. - Test
- * - Status: connected, entity access confirmed (Customer API)
- * - Push Sales Order: SO574027 created (Customer C00006, Customer Order 840432706992)
- * - Push Warranty Case: CS17612 created (WARRANTY class)
- * - SPS/BOL CLI added for third SOW: `npm run sps-bol -- generate ...`
- */
+# Power Smart Acumatica CLI reference
 
-# Power Smart POC CLI Skills
+Reference for `ps-acumatica`, the CLI at `scripts/acumatica/cli.ts`. It talks to the Acumatica Contract-Based REST API (v22.200.001). The workflow playbooks that use this CLI live in `.agents/skills/`.
 
-Agent-first CLI instructions for the Power Smart POC repo.
+The output contract: results are JSON on stdout, so every command pipes cleanly. Progress and next-step hints are plain sentences on stderr, written so an agent can quote them while narrating a run. Pass `--quiet` to silence the narration. Exit code 0 means success and 1 means any error.
 
-The repo now has two command surfaces:
-
-| CLI | Purpose |
-|---|---|
-| `npm run acumatica -- <command>` | Push warranty and retail order intake into Acumatica. |
-| `npm run sps-bol -- auth setup/status/config` | Set up SPS Commerce bearer-token access in the TypeScript Printing Press style. |
-| `npm run sps-bol -- generate ...` | Run SPS Commerce export cleanup, validation, and BOL DOCX generation for the third SOW. |
-
-## Quick Start
+## Quick start
 
 ```bash
-# One-time config (stores to ~/.acumatica-config.json)
-npm run acumatica -- config
-
-# Login via cookie-based session (NO Connected App required)
-npm run acumatica -- login
-
-# Test connection (OAuth fallback → cookie auth)
-npm run acumatica -- status
-
-# Pipe order JSON
-cat order.json | npm run acumatica -- push-order
-
-# Pipe warranty JSON
-cat warranty.json | npm run acumatica -- push-warranty
-
-# Push both together
-cat combined.json | npm run acumatica -- push-both
-
-# Run SPS export to BOL generation
-npm run sps-bol -- generate \
-  --source "/path/to/A order BOL template.xlsx" \
-  --template "/path/to/A BOL template.docx" \
-  --out "artifacts/sps-bol-run"
+npm run acumatica -- config          # one time, writes ~/.acumatica-config.json
+npm run acumatica -- login           # cookie session, no Connected App needed
+npm run acumatica -- status          # proves the connection and names the auth method
+npm run acumatica -- push-order --file artifacts/order.json
+npm run acumatica -- url sales-order SO574027
 ```
 
-## Acumatica Commands
+`npm run acumatica -- help` prints the full command list, and `help <command>` prints the detail for one command.
 
-| Command | Description |
-|---------|-------------|
-| `login` | Authenticate via cookie-based session (works without Connected App) |
-| `setup-app` | Show Connected Application setup guide for OAuth ROPC |
-| `config` | Interactive config setup (baseUrl, tenant, username, password) |
-| `show-config` | Display current config (password masked) |
-| `status` | Test Acumatica connection (tries OAuth → falls back to cookie auth) |
-| `push-order` | Create/update a Sales Order (JSON via stdin) |
-| `push-warranty` | Create a Case for warranty (JSON via stdin) |
-| `push-both` | Push order + warranty together (JSON via stdin) |
+## Commands
 
-## SPS/BOL Commands
-
-| Command | Description |
-|---------|-------------|
-| `generate` | Read SPS workbook `Sheet1` and destination/reference `Sheet2`, normalize rows, validate required BOL fields, generate one DOCX BOL per valid row, and write CSV/JSON QA artifacts. |
-| `auth setup` | Print SPS Commerce Dev Center/Auth0 bearer-token setup instructions. |
-| `config` | Store local SPS Commerce base URL and optional bearer token. |
-| `status` | Validate bearer-token availability; optionally probe a supplied SPS endpoint. |
-
-Required arguments:
-
-| Argument | Description |
+| Command | What it does |
 |---|---|
-| `--source` | SPS/order workbook path. Expected tabs: `Sheet1`, `Sheet2`. |
-| `--template` | Word BOL template with merge placeholders. |
-| `--out` | Output directory for normalized CSVs, generated BOLs, previews, QA report, manifest, and summary. |
+| `config` | Interactive credential setup. Writes the config file. |
+| `login` | Authenticates with a cookie session and verifies entity access. |
+| `status` | Reads one Customer record and reports which auth method worked. |
+| `show-config` | Prints the config with the password masked. |
+| `setup-app` | Prints the one time Connected Application steps for OAuth. |
+| `push-order` | Creates a Sales Order from an order JSON payload. |
+| `push-warranty` | Creates a warranty Case from a warranty JSON payload. |
+| `push-both` | Creates both from one `{order, warranty}` payload. |
+| `lookup-order` | Finds sales orders by `OrderNbr` or by `--customer-order`. Use before pushing to avoid duplicates. |
+| `lookup-warranty` | Finds warranty cases whose subject contains a serial number. |
+| `url` | Prints the deep link for an Acumatica screen, for browser demos and verification. |
 
-SPS/BOL output files:
+## Payload input
 
-| File | Purpose |
-|---|---|
-| `01_sps_export_raw.csv` | Raw SPS export rows from workbook `Sheet1`. |
-| `02_destination_reference.csv` | Destination/reference rows from workbook `Sheet2`. |
-| `03_normalized_orders.csv` | Canonical normalized order rows. |
-| `04_bol_field_mapping.csv` | Template placeholder to payload field map. |
-| `05_bol_payload.csv` | Valid BOL merge payload rows. |
-| `06_validation_report.csv` | Required-field validation status. |
-| `07_output_manifest.csv` | Generated DOCX and preview path manifest. |
-| `08_docx_qa_report.csv` | Unreplaced-placeholder QA. |
-| `automation_summary.json` | Machine-readable run summary. |
+The push commands accept the payload three ways, checked in this order:
 
-## Auth Architecture
+1. `--file <path>`
+2. a bare path argument, e.g. `push-both artifacts/acumatica-payload.json`
+3. JSON piped to stdin
 
-Two auth paths, attempted in order by `apiRequest()`:
+When no payload arrives, the error JSON names all three options.
 
-1. **OAuth ROPC** (preferred when available):
-   - POST to `/identity/connect/token` with `grant_type=password`
-   - Uses `Authorization: Bearer <token>` header
-   - Requires a Connected Application registered in Acumatica (SM303010)
-   - Client ID: `api`, Flow: Resource Owner Password Credentials
+## Screen deep links
 
-2. **Cookie-based Session** (fallback — works without Connected App):
-   - POST to `/entity/auth/login` with `company=AmeriSun Inc. - Test`
-   - Uses curl internally for reliable Set-Cookie capture
-   - Parses Netscape cookie jar format → `name=value; ` format
-   - Stores at `~/.acumatica-cookies.txt`
-   - Session valid for ~1 hour; run `ps-acumatica login` to refresh
+`url` prints a JSON object with the screen id and the full URL:
 
-**Status output confirms which auth method was used:**
-```json
-{
-  "status": "connected",
-  "tenant": "Test",
-  "auth": "cookie",
-  "entityTest": "OK",
-  "sampleCustomer": "Amazon Vendor Central"
-}
-```
+| Screen argument | Acumatica screen | Example |
+|---|---|---|
+| `sales-order` | Sales Orders, SO301000 | `url sales-order SO574027` |
+| `invoice` | Sales Order Invoices, SO303000 | `url invoice INV001234` |
+| `case` | Cases, CR306000 | `url case CS017612` |
 
-## Prerequisites
+An agent showing a milestone opens this URL in the browser and screenshots the record. The headless fallback is `npm run verify-acumatica-ui -- <OrderNbr> <CaseID> <CustomerOrder> <Serial>`, which saves screenshots under `artifacts/ui-verification/`.
 
-### For Cookie Auth (zero-config, POC-ready):
-- Acumatica sandbox credentials in `~/.acumatica-config.json`
-- Company name matching the Acumatica tenant (e.g., "AmeriSun Inc. - Test")
+## Auth
 
-### For OAuth ROPC (production):
-- Connected Application created at SM303010 with client_id=`api`, ROPC flow, scopes=`api offline_access`
-- Run `ps-acumatica setup-app` for a step-by-step setup guide
+Two paths, tried in this order by every API call:
+
+1. **OAuth ROPC.** POST to `/identity/connect/token`. Requires a Connected Application (client id `api`, ROPC flow, scopes `api offline_access`) created once at screen SM303010. `setup-app` prints the steps.
+2. **Cookie session.** POST to `/entity/auth/login` with the company name. Works with no Connected App, which is why `login` is the POC default. Cookies live at `~/.acumatica-cookies.txt` and last about one hour; the CLI warns on stderr when they look stale.
+
+`status` reports which path worked in its `auth` field.
 
 ## Configuration
 
-Config stored at `~/.acumatica-config.json`:
+The config lives at `~/.acumatica-config.json`. Set the `ACUMATICA_CONFIG` environment variable to point at a different file, e.g. for a second tenant or for tests.
 
 ```json
 {
@@ -153,11 +77,12 @@ Config stored at `~/.acumatica-config.json`:
 }
 ```
 
-The `company` field is used for cookie-based auth (must match the company name in Acumatica).
+The `company` field must match the company name in Acumatica, because cookie login sends it.
 
-## STDIN Formats
+## Payload shapes
 
 ### push-order
+
 ```json
 {
   "customerName": "Jason Mack",
@@ -174,17 +99,18 @@ The `company` field is used for cookie-based auth (must match the company name i
 }
 ```
 
-`customerId` is optional. If omitted, the CLI resolves known retail platforms conservatively:
+`customerId` is optional. When omitted, the CLI resolves the retailer itself and prints its reasoning on stderr:
 
 | Match | CustomerID |
 |---|---|
-| Home Depot Canada address | `C00006` |
-| Home Depot US address | `C00008` |
+| Home Depot with a Canadian address | `C00006` |
+| Home Depot with a US address | `C00008` |
 | Amazon | `C00002` |
 | Walmart | `C00009` |
-| Fallback | `C00001` |
+| Anything else | `C00001`, and a human should confirm first |
 
 ### push-warranty
+
 ```json
 {
   "claimantName": "Jason Mack",
@@ -202,68 +128,22 @@ The `company` field is used for cookie-based auth (must match the company name i
 }
 ```
 
-## Known Constraints
+A `validationResult` of `"escalated"` maps to `Severity: High` on the created case.
 
-### Sales Order CustomerID
-- Acumatica `CustomerID` is a segment key and cannot use arbitrary email addresses.
-- POC uses existing sandbox customer IDs for known retailers.
-- Prefer explicit `customerId` in production payloads when the retailer/customer mapping is known.
+## Output shapes
 
-### Date Format
-- Must use ISO 8601: `2026-05-11T00:00:00.000`
-- The CLI's `wrap()` function formats dates correctly
-- Acumatica auto-numbering requires `Date` to have a value for `<NEW>` orders
-
-### Connected Application
-- OAuth ROPC requires manual Connected Application creation at SM303010
-- The SOAP endpoint for SM303010 exists but returns empty responses for programmatic creation
-- Use the browser-based SM303010 screen for one-time setup
-- Once created, the client secret appears once — save it securely
-
-## API Endpoints
-
-- `PUT /entity/Default/22.200.001/SalesOrder` — creates/updates sales orders
-- `PUT /entity/Default/22.200.001/Case` — creates/updates warranty cases
-- `GET /entity/Default/22.200.001/Customer?$top=1` — connection test
-- `POST /entity/auth/login` — cookie-based session auth
-
-All values are wrapped as `{"value": "..."}` per Acumatica contract-based format.
-
-### BOL Rendering
-- SPS/BOL CLI performs structural DOCX and placeholder QA.
-- Visual PDF render QA requires LibreOffice/soffice; if absent, rely on preview text and `08_docx_qa_report.csv`.
-
-## Verified Pipeline Run (2026-05-24)
-
-Against amerisuninc.acumatica.com (Test tenant, AmeriSun Inc. - Test company):
-
-| Step | Result |
-|------|--------|
-| Login (`ps-acumatica login`) | ✅ Session valid, entity access confirmed |
-| Status (`ps-acumatica status`) | ✅ `connected`, `auth: cookie`, `entityTest: OK` |
-| Sales Order push | ✅ SO574027 created (Status: Open, Customer: C00006, Customer Order: 840432706992) |
-| Warranty Case push | ✅ CS17612 created (Class: WARRANTY, Status: New) |
-| Extraction (Jason Mack) | ✅ 10/10 fields, 0 errors, 0 warnings |
-| SPS/BOL generation | ✅ 4 valid payload rows, 4 DOCX BOLs generated, 0 unreplaced placeholders |
-
-Evidence is recorded in `artifacts/poc-execution-validation.md`.
-
-## Exit Codes
-
-- `0` — success
-- `1` — error (auth failed, invalid input, API error)
-
-## Output
-
-All output is JSON to stdout. Errors are JSON to stderr.
+Success:
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "data": { "OrderNbr": { "value": "SO574025" }, "Status": { "value": "Open" } }
+  "data": { "OrderNbr": { "value": "SO574025" }, "Status": { "value": "Open" } },
+  "customer": { "id": "C00006", "source": "home_depot_canada" }
 }
 ```
+
+Failure:
 
 ```json
 {
@@ -273,10 +153,18 @@ All output is JSON to stdout. Errors are JSON to stderr.
 }
 ```
 
+`lookup-order` and `lookup-warranty` return `{ success, found, orders | cases }` with the key fields already unwrapped.
+
+## Known constraints
+
+- `CustomerID` is a segment key, so arbitrary values fail. The POC maps known retailers to existing sandbox customers, and production payloads should pass an explicit `customerId`.
+- Acumatica auto numbering needs `Date` populated on `<NEW>` orders. Dates are ISO 8601.
+- The SOAP endpoint for creating Connected Applications returns empty responses, so the one time OAuth setup happens in the browser at SM303010.
+
+## Verified run, May 24, 2026
+
+Against the `amerisuninc.acumatica.com` Test tenant: login and status connected with cookie auth, sales order SO574027 created for customer C00006 with customer order 840432706992, and warranty case CS17612 created. Evidence is in `artifacts/poc-execution-validation.md`.
+
 ## Dependencies
 
-- Node.js 18+ (uses native `fetch`)
-- `curl` (for reliable cookie capture during login)
-- `tsx`, `xlsx`, and `jszip` for the SPS/BOL CLI
-- Config file at `~/.acumatica-config.json`
-- Cookie jar at `~/.acumatica-cookies.txt`
+Node.js 18 or newer for native `fetch`, `curl` for cookie capture during login, and `tsx` to run the TypeScript entry point. The SPS BOL CLI is separate; see `scripts/sps-commerce/SKILL.md`.

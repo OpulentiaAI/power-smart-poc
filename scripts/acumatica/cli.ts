@@ -3,9 +3,11 @@
  * Power Smart Acumatica CLI — `ps-acumatica`
  *
  * Built against Acumatica Contract-Based REST API (v22.200.001+).
- * Auth: OAuth ROPC (preferred) with cookie-based session fallback.
+ * Auth: cookie-based session (primary) with OAuth ROPC when a Connected App exists.
  *
- * Printing-Press CLI Patterns: agent-first JSON, curated commands, pipeable.
+ * Contract: results are JSON on stdout so they pipe cleanly. Progress and hints
+ * are plain sentences on stderr so an agent can quote them to the user while
+ * narrating a run. Pass --quiet to silence the narration.
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -28,17 +30,33 @@ interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   statusCode?: number;
+  auth?: string;
 }
 
 // ─── Config ──────────────────────────────────────────────────────────
-const CONFIG_PATH = path.join(process.env.HOME || "/root", ".acumatica-config.json");
+const CONFIG_PATH =
+  process.env.ACUMATICA_CONFIG ||
+  path.join(process.env.HOME || "/root", ".acumatica-config.json");
 const COOKIE_JAR_PATH = path.join(process.env.HOME || "/root", ".acumatica-cookies.txt");
+
+let QUIET = false;
+
+/** Progress narration on stderr. Stdout stays pure JSON. */
+function say(message: string): void {
+  if (!QUIET) console.error(message);
+}
+
+function fail(error: string, hint?: string): never {
+  console.error(JSON.stringify(hint ? { error, hint } : { error }));
+  process.exit(1);
+}
 
 function loadConfig(): AcumaticaConfig {
   if (!fs.existsSync(CONFIG_PATH)) {
-    console.error(JSON.stringify({ error: `Config not found at ${CONFIG_PATH}` }));
-    console.error("Run: ps-acumatica config");
-    process.exit(1);
+    fail(
+      `Config not found at ${CONFIG_PATH}`,
+      "Run: npm run acumatica -- config   (or set ACUMATICA_CONFIG to a config file path)",
+    );
   }
   return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
 }
@@ -83,7 +101,7 @@ function loadCookies(): string | null {
   try {
     const stat = fs.statSync(COOKIE_JAR_PATH);
     if (Date.now() - stat.mtimeMs > 60 * 60 * 1000) {
-      console.error(JSON.stringify({ warning: "Session cookies may be expired (>1hr). Run: ps-acumatica login" }));
+      say("Session cookies are older than one hour and may be expired. Run: npm run acumatica -- login");
     }
   } catch {}
   return cookies;
@@ -134,7 +152,7 @@ async function apiRequest(endpoint: string, method: string, body?: Record<string
   } catch (oauthErr: any) {
     const cookieStr = loadCookies();
     if (!cookieStr) {
-      return { success: false, error: `OAuth failed (${oauthErr.message}) and no session cookies found. Run: ps-acumatica login` };
+      return { success: false, error: `OAuth failed (${oauthErr.message}) and no session cookies found. Run: npm run acumatica -- login` };
     }
     headers["Cookie"] = cookieStr;
     authMethod = "cookie";
@@ -151,7 +169,7 @@ async function apiRequest(endpoint: string, method: string, body?: Record<string
     if (!response.ok) return { success: false, statusCode: response.status, error: text };
     let parsed: unknown;
     try { parsed = JSON.parse(text); } catch { parsed = text; }
-    return { success: true, statusCode: response.status, data: parsed, auth: authMethod } as any;
+    return { success: true, statusCode: response.status, data: parsed, auth: authMethod };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -159,6 +177,45 @@ async function apiRequest(endpoint: string, method: string, body?: Record<string
 
 async function apiPut(endpoint: string, body: Record<string, unknown>): Promise<ApiResponse> {
   return apiRequest(endpoint, "PUT", body);
+}
+
+// ─── Screen URLs (for browser milestones) ────────────────────────────
+
+const SCREENS: Record<string, { screenId: string; label: string; param?: (id: string) => string }> = {
+  "sales-order": {
+    screenId: "SO301000",
+    label: "Sales Orders entry screen",
+    param: (id) => `OrderType=SO&OrderNbr=${encodeURIComponent(id)}`,
+  },
+  "invoice": {
+    screenId: "SO303000",
+    label: "Sales Order Invoices screen",
+    param: (id) => `DocType=INV&RefNbr=${encodeURIComponent(id)}`,
+  },
+  "case": {
+    screenId: "CR306000",
+    label: "Cases entry screen",
+    param: (id) => `CaseID=${encodeURIComponent(id)}`,
+  },
+};
+
+function screenUrl(screen: string, id?: string): { screen: string; screenId: string; label: string; url: string } {
+  const def = SCREENS[screen];
+  if (!def) {
+    fail(
+      `Unknown screen: ${screen}`,
+      `Known screens: ${Object.keys(SCREENS).join(", ")}. Example: npm run acumatica -- url sales-order SO574027`,
+    );
+  }
+  const config = loadConfig();
+  const base = config.baseUrl.replace(/\/$/, "");
+  const query = id && def.param ? `&${def.param(id)}` : "";
+  return {
+    screen,
+    screenId: def.screenId,
+    label: def.label,
+    url: `${base}/Main?ScreenId=${def.screenId}${query}`,
+  };
 }
 
 // ─── Sales Order Input ──────────────────────────────────────────────
@@ -238,21 +295,65 @@ async function pushWarrantyCase(caseData: WarrantyCaseInput): Promise<ApiRespons
   return apiPut("Case", body);
 }
 
+// ─── Payload input (file, positional path, or stdin) ─────────────────
+
+async function readStdin(): Promise<string> {
+  return new Promise((resolve) => {
+    let data = "";
+    const { stdin } = process; stdin.setEncoding("utf-8");
+    stdin.on("readable", () => { let chunk; while ((chunk = stdin.read()) !== null) data += chunk; });
+    stdin.on("end", () => resolve(data.trim()));
+    if (stdin.isTTY) resolve("");
+  });
+}
+
+async function readPayload(args: string[], shape: string): Promise<any> {
+  const fileFlag = args.indexOf("--file");
+  const filePath = fileFlag !== -1 ? args[fileFlag + 1] : args.find((a) => !a.startsWith("-"));
+  let raw: string;
+  let source: string;
+  if (filePath) {
+    if (!fs.existsSync(filePath)) fail(`Payload file not found: ${filePath}`);
+    raw = fs.readFileSync(filePath, "utf-8").trim();
+    source = filePath;
+  } else {
+    raw = await readStdin();
+    source = "stdin";
+  }
+  if (!raw) {
+    fail(
+      `No payload. Expected ${shape} JSON.`,
+      "Pass a file (--file artifacts/acumatica-payload.json), a bare path, or pipe JSON via stdin.",
+    );
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    say(`Read ${shape} payload from ${source}.`);
+    return parsed;
+  } catch (err: any) {
+    fail(`Payload from ${source} is not valid JSON: ${err.message}`);
+  }
+}
+
+function flagValue(args: string[], flag: string): string | undefined {
+  const i = args.indexOf(flag);
+  return i === -1 ? undefined : args[i + 1];
+}
+
 // ─── Commands ────────────────────────────────────────────────────────
 
 async function cmdStatus(): Promise<void> {
   try {
     const config = loadConfig();
-    const result = await apiRequest("Customer?\$top=1", "GET");
+    const result = await apiRequest("Customer?$top=1", "GET");
     if (result.success) {
       const data = Array.isArray(result.data) ? result.data : [];
-      const authMethod = (result as any).auth || "unknown";
       console.log(JSON.stringify({
         status: "connected",
         tenant: config.tenant,
-        auth: authMethod,
+        auth: result.auth || "unknown",
         entityTest: data.length > 0 ? "OK" : "unexpected",
-        sampleCustomer: data[0]?.CustomerName?.value || "N/A",
+        sampleCustomer: (data[0] as any)?.CustomerName?.value || "N/A",
       }, null, 2));
     } else {
       console.log(JSON.stringify({
@@ -271,12 +372,13 @@ async function cmdStatus(): Promise<void> {
 async function cmdLogin(): Promise<void> {
   try {
     const config = loadConfig();
-    const cookieStr = await cookieLogin(config);
+    say(`Logging in to ${config.baseUrl} (tenant ${config.tenant}) with a cookie session.`);
+    await cookieLogin(config);
     console.log(JSON.stringify({ status: "logged_in", tenant: config.tenant, cookieJar: COOKIE_JAR_PATH }, null, 2));
     // Verify session works by testing entity access
-    const result = await apiRequest("Customer?\$top=1", "GET");
+    const result = await apiRequest("Customer?$top=1", "GET");
     if (result.success) {
-      console.log(JSON.stringify({ verify: "Session valid, entity access confirmed" }, null, 2));
+      say("Session verified. Entity access confirmed with a Customer read.");
     }
   } catch (err: any) {
     console.log(JSON.stringify({ status: "login_failed", error: err.message }, null, 2));
@@ -286,34 +388,20 @@ async function cmdLogin(): Promise<void> {
 
 function cmdSetupConnectedApp(): void {
   const config = loadConfig();
-  console.log(`╔══════════════════════════════════════════════════════════════╗
-║  CONNECTED APPLICATION SETUP GUIDE                          ║
-╠══════════════════════════════════════════════════════════════╣
-║                                                            ║
-║  Cookie-based auth IS working via:                          ║
-║    POST /entity/auth/login → session cookies                ║
-║                                                            ║
-║  But OAuth ROPC requires a Connected Application.           ║
-║  To create one:                                            ║
-║                                                            ║
-║  1. Log into the Acumatica sandbox at:                      ║
-║     ${config.baseUrl}/                                     ║
-║                                                            ║
-║  2. Navigate to: Connected Applications (SM303010)          ║
-║                                                            ║
-║  3. Click "+" to add a new Connected Application           ║
-║                                                            ║
-║  4. Fill in:                                               ║
-║     - Client Name: ps-acumatica-cli                         ║
-║     - Client ID: api                                       ║
-║     - Flow: Resource Owner Password Credentials             ║
-║     - Scopes: api, offline_access                          ║
-║     - Click SAVE                                           ║
-║                                                            ║
-║  5. After creation, the Client Secret will be shown ONCE.   ║
-║     Save it! Then run: ps-acumatica login                   ║
-║                                                        ║
-╚══════════════════════════════════════════════════════════════╝`);
+  console.log(`Connected Application setup (needed for OAuth only; cookie login works without it)
+
+Cookie-based auth already works via POST /entity/auth/login.
+To enable OAuth ROPC, create a Connected Application once:
+
+  1. Log into the sandbox: ${config.baseUrl}/
+  2. Open the Connected Applications screen (SM303010).
+  3. Add a new Connected Application:
+       Client Name: ps-acumatica-cli
+       Client ID:   api
+       Flow:        Resource Owner Password Credentials
+       Scopes:      api, offline_access
+  4. Save. The client secret is shown once; store it securely.
+  5. Run: npm run acumatica -- login`);
 }
 
 function cmdConfig(): void {
@@ -338,87 +426,262 @@ function cmdShowConfig(): void {
   console.log(JSON.stringify({ ...cfg, password: "***" }, null, 2));
 }
 
-// ─── Stdin ───────────────────────────────────────────────────────────
+async function cmdPushOrder(args: string[]): Promise<void> {
+  const order: SalesOrderInput = await readPayload(args, "order");
+  const cust = resolveCustomerId(order);
+  say(`Order ${order.orderNumber} for ${order.customerName} (${order.platform}).`);
+  say(`Resolved customer ${cust.id} (${cust.source}).`);
+  say("Pushing the sales order to Acumatica now.");
+  const result = await pushSalesOrder(order, cust.id);
+  console.log(JSON.stringify({ ...result, customer: cust }, null, 2));
+  if (result.success) {
+    const orderNbr = (result.data as any)?.OrderNbr?.value;
+    if (orderNbr) {
+      say(`Created sales order ${orderNbr}.`);
+      say(`Show it in the browser: npm run acumatica -- url sales-order ${orderNbr}`);
+      say(`Verify it end to end: npm run verify-acumatica-ui -- ${orderNbr} "" ${order.orderNumber} ${order.serialNumber}`);
+    }
+  }
+  process.exit(result.success ? 0 : 1);
+}
 
-async function readStdin(): Promise<string> {
-  return new Promise((resolve) => {
-    let data = "";
-    const { stdin } = process; stdin.setEncoding("utf-8");
-    stdin.on("readable", () => { let chunk; while ((chunk = stdin.read()) !== null) data += chunk; });
-    stdin.on("end", () => resolve(data.trim()));
-    if (stdin.isTTY) resolve("");
-  });
+async function cmdPushWarranty(args: string[]): Promise<void> {
+  const caseData: WarrantyCaseInput = await readPayload(args, "warranty");
+  say(`Warranty claim for ${caseData.claimantName}, serial ${caseData.serialNumber}, validation ${caseData.validationResult}.`);
+  say("Pushing the warranty case to Acumatica now.");
+  const result = await pushWarrantyCase(caseData);
+  console.log(JSON.stringify(result, null, 2));
+  if (result.success) {
+    const caseId = (result.data as any)?.CaseID?.value || (result.data as any)?.CaseCD?.value;
+    if (caseId) {
+      say(`Created warranty case ${caseId}.`);
+      say(`Show it in the browser: npm run acumatica -- url case ${caseId}`);
+    }
+  }
+  process.exit(result.success ? 0 : 1);
+}
+
+async function cmdPushBoth(args: string[]): Promise<void> {
+  const payload: { order: SalesOrderInput; warranty: WarrantyCaseInput } = await readPayload(args, "{order, warranty}");
+  if (!payload.order || !payload.warranty) {
+    fail("Payload must contain both an order object and a warranty object.", "Shape: {\"order\": {...}, \"warranty\": {...}}");
+  }
+  const cust = resolveCustomerId(payload.order);
+  say(`Resolved customer ${cust.id} (${cust.source}).`);
+  say("Pushing the sales order first, then the warranty case.");
+  const orderResult = await pushSalesOrder(payload.order, cust.id);
+  const warrantyResult = await pushWarrantyCase(payload.warranty);
+  const orderNbr = (orderResult.data as any)?.OrderNbr?.value;
+  const caseId = (warrantyResult.data as any)?.CaseID?.value || (warrantyResult.data as any)?.CaseCD?.value;
+  console.log(JSON.stringify({
+    success: orderResult.success && warrantyResult.success,
+    customer: cust,
+    order: orderResult,
+    warranty: warrantyResult,
+  }, null, 2));
+  if (orderNbr) say(`Created sales order ${orderNbr}. Show it: npm run acumatica -- url sales-order ${orderNbr}`);
+  if (caseId) say(`Created warranty case ${caseId}. Show it: npm run acumatica -- url case ${caseId}`);
+  process.exit(orderResult.success && warrantyResult.success ? 0 : 1);
+}
+
+async function cmdLookupOrder(args: string[]): Promise<void> {
+  const orderNbr = flagValue(args, "--order-nbr") || args.find((a) => !a.startsWith("-"));
+  const customerOrder = flagValue(args, "--customer-order");
+  let filter: string;
+  if (orderNbr) filter = `OrderNbr eq '${orderNbr}'`;
+  else if (customerOrder) filter = `CustomerOrder eq '${customerOrder}'`;
+  else {
+    fail(
+      "lookup-order needs an id.",
+      "Pass an Acumatica order number (lookup-order SO574027) or a retailer order (--customer-order 840432706992).",
+    );
+  }
+  say(`Searching sales orders where ${filter}.`);
+  const result = await apiRequest(`SalesOrder?$filter=${encodeURIComponent(filter)}&$top=5`, "GET");
+  const rows = Array.isArray(result.data) ? result.data : [];
+  console.log(JSON.stringify({
+    success: result.success,
+    found: rows.length,
+    orders: rows.map((r: any) => ({
+      OrderNbr: r.OrderNbr?.value,
+      CustomerOrder: r.CustomerOrder?.value,
+      CustomerID: r.CustomerID?.value,
+      Status: r.Status?.value,
+      Date: r.Date?.value,
+      Description: r.Description?.value,
+    })),
+    error: result.error,
+  }, null, 2));
+  process.exit(result.success ? 0 : 1);
+}
+
+async function cmdLookupWarranty(args: string[]): Promise<void> {
+  const serial = flagValue(args, "--serial") || args.find((a) => !a.startsWith("-"));
+  if (!serial) {
+    fail("lookup-warranty needs a serial number.", "Example: npm run acumatica -- lookup-warranty 0012412033380609022");
+  }
+  say(`Searching warranty cases with serial ${serial} in the subject.`);
+  const result = await apiRequest(`Case?$filter=${encodeURIComponent(`substringof('${serial}',Subject)`)}&$top=5`, "GET");
+  const rows = Array.isArray(result.data) ? result.data : [];
+  console.log(JSON.stringify({
+    success: result.success,
+    found: rows.length,
+    cases: rows.map((r: any) => ({
+      CaseID: r.CaseID?.value,
+      Subject: r.Subject?.value,
+      Status: r.Status?.value,
+      Severity: r.Severity?.value,
+      ClassID: r.ClassID?.value,
+    })),
+    error: result.error,
+  }, null, 2));
+  if (result.success && rows.length === 0) {
+    say("No case found for that serial. If this is a registration, draft the customer email from fixtures/warranty-email/.");
+  }
+  process.exit(result.success ? 0 : 1);
+}
+
+function cmdUrl(args: string[]): void {
+  const [screen, id] = args.filter((a) => !a.startsWith("-"));
+  if (!screen) {
+    fail(
+      "url needs a screen name.",
+      `Known screens: ${Object.keys(SCREENS).join(", ")}. Example: npm run acumatica -- url sales-order SO574027`,
+    );
+  }
+  const info = screenUrl(screen, id);
+  console.log(JSON.stringify(info, null, 2));
+  say(`Open this in the browser to show the ${info.label}${id ? ` for ${id}` : ""}.`);
 }
 
 // ─── CLI Router & Help ───────────────────────────────────────────────
 
-function showHelp(): void {
+const COMMAND_HELP: Record<string, string> = {
+  login: `login — authenticate with a cookie session (no Connected App needed)
+
+  npm run acumatica -- login
+
+Stores session cookies at ~/.acumatica-cookies.txt (valid about one hour).`,
+  status: `status — test the Acumatica connection
+
+  npm run acumatica -- status
+
+Reads one Customer record and reports which auth method worked (oauth or cookie).`,
+  config: `config — interactive credential setup
+
+  npm run acumatica -- config
+
+Writes ${CONFIG_PATH}. Set ACUMATICA_CONFIG to use a different path.`,
+  "show-config": `show-config — print the current config with the password masked`,
+  "setup-app": `setup-app — print the one-time Connected Application setup steps for OAuth`,
+  "push-order": `push-order — create a Sales Order from JSON
+
+  npm run acumatica -- push-order --file artifacts/order.json
+  cat artifacts/acumatica-payload.json | jq -c '.order' | npm run acumatica -- push-order
+
+Input: an order object (see scripts/acumatica/SKILL.md for the shape).
+On success, stderr prints the new OrderNbr plus the url and verify commands to show it.`,
+  "push-warranty": `push-warranty — create a warranty Case from JSON
+
+  npm run acumatica -- push-warranty --file artifacts/warranty.json
+  cat artifacts/acumatica-payload.json | jq -c '.warranty' | npm run acumatica -- push-warranty`,
+  "push-both": `push-both — create the Sales Order and the warranty Case in one run
+
+  npm run acumatica -- push-both --file artifacts/acumatica-payload.json
+
+Input: {"order": {...}, "warranty": {...}}. Output JSON contains both results.`,
+  "lookup-order": `lookup-order — find existing sales orders (use before pushing to avoid duplicates)
+
+  npm run acumatica -- lookup-order SO574027
+  npm run acumatica -- lookup-order --customer-order 840432706992`,
+  "lookup-warranty": `lookup-warranty — find warranty cases by serial number
+
+  npm run acumatica -- lookup-warranty 0012412033380609022`,
+  url: `url — print the deep link for an Acumatica screen (for browser demos and verification)
+
+  npm run acumatica -- url sales-order SO574027   (Sales Orders, SO301000)
+  npm run acumatica -- url invoice INV001234      (Sales Order Invoices, SO303000)
+  npm run acumatica -- url case CS017612          (Cases, CR306000)`,
+};
+
+function showHelp(command?: string): void {
+  if (command && COMMAND_HELP[command]) {
+    console.log(COMMAND_HELP[command]);
+    return;
+  }
   console.log(`Power Smart Acumatica CLI — ps-acumatica
-Built on Acumatica Contract-Based REST API (OAuth ROPC + cookie session)
+Acumatica Contract-Based REST API (cookie session, OAuth ROPC when available)
 
-USAGE: npx tsx scripts/acumatica/cli.ts <command>
+USAGE
+  npm run acumatica -- <command> [options]
+  npm run acumatica -- help <command>
 
-COMMANDS:
-  login           Authenticate via cookie-based session (works without Connected App)
-  setup-app       Show Connected Application setup guide
-  config          Interactive config setup
-  show-config     Display config (password masked)
-  status          Test Acumatica connection (OAuth → cookie fallback)
-  push-order      Push sales order (JSON via stdin)
-  push-warranty   Push warranty case (JSON via stdin)
-  push-both       Push order + warranty together (JSON via stdin)
+SETUP
+  config           Interactive credential setup (writes ${CONFIG_PATH})
+  login            Authenticate with a cookie session
+  status           Test the connection and report the auth method
+  show-config      Print the config with the password masked
+  setup-app        Print the Connected Application setup steps for OAuth
 
-EXAMPLE:
-  # First login (cookie-based, no Connected App needed)
-  npx tsx scripts/acumatica/cli.ts login
+PUSH (payload: --file <path>, a bare path, or JSON on stdin)
+  push-order       Create a Sales Order
+  push-warranty    Create a warranty Case
+  push-both        Create both from one {order, warranty} payload
 
-  # Test connection
-  npx tsx scripts/acumatica/cli.ts status
+LOOKUP AND SHOW
+  lookup-order     Find sales orders by OrderNbr or --customer-order
+  lookup-warranty  Find warranty cases by serial number
+  url              Print the browser deep link for sales-order, invoice, or case
 
-  # Push data
-  cat artifacts/acumatica-payload.json | npx tsx scripts/acumatica/cli.ts push-both`);
+OPTIONS
+  --file <path>    Read the payload from a file instead of stdin
+  --quiet          Suppress progress narration on stderr (stdout is always pure JSON)
+
+TYPICAL RUN
+  npm run acumatica -- login
+  npm run acumatica -- lookup-order --customer-order 840432706992
+  npm run acumatica -- push-order --file artifacts/order.json
+  npm run acumatica -- url sales-order SO574027`);
+}
+
+function suggestCommand(cmd: string): string | undefined {
+  const all = [...Object.keys(COMMAND_HELP), "help"];
+  return all.find((c) => c.startsWith(cmd) || c.includes(cmd) || cmd.includes(c));
 }
 
 async function main(): Promise<void> {
-  const cmd = process.argv[2];
+  const argv = process.argv.slice(2).filter((a) => {
+    if (a === "--quiet") { QUIET = true; return false; }
+    return true;
+  });
+  const [cmd, ...args] = argv;
+
+  if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h") {
+    showHelp(args[0]);
+    return;
+  }
+
   switch (cmd) {
     case "login": return await cmdLogin();
     case "setup-app": return cmdSetupConnectedApp();
     case "config": return cmdConfig();
     case "show-config": return cmdShowConfig();
     case "status": return await cmdStatus();
-    case "push-order": {
-      const data = await readStdin();
-      if (!data) { console.error(JSON.stringify({ error: "Pipe JSON to stdin" })); process.exit(1); }
-      const order = JSON.parse(data);
-      const cust = resolveCustomerId(order);
-      console.error(JSON.stringify({ customer: cust }));
-      const result = await pushSalesOrder(order, cust.id);
-      console.log(JSON.stringify(result, null, 2));
-      process.exit(result.success ? 0 : 1);
+    case "push-order": return await cmdPushOrder(args);
+    case "push-warranty": return await cmdPushWarranty(args);
+    case "push-both": return await cmdPushBoth(args);
+    case "lookup-order": return await cmdLookupOrder(args);
+    case "lookup-warranty": return await cmdLookupWarranty(args);
+    case "url": return cmdUrl(args);
+    default: {
+      const suggestion = suggestCommand(cmd);
+      fail(
+        `Unknown command: ${cmd}`,
+        suggestion
+          ? `Did you mean "${suggestion}"? Run: npm run acumatica -- help`
+          : "Run: npm run acumatica -- help",
+      );
     }
-    case "push-warranty": {
-      const data = await readStdin();
-      if (!data) { console.error(JSON.stringify({ error: "Pipe JSON to stdin" })); process.exit(1); }
-      const result = await pushWarrantyCase(JSON.parse(data));
-      console.log(JSON.stringify(result, null, 2));
-      process.exit(result.success ? 0 : 1);
-    }
-    case "push-both": {
-      const data = await readStdin();
-      if (!data) { console.error(JSON.stringify({ error: "Pipe {order, warranty} JSON to stdin" })); process.exit(1); }
-      const payload: { order: SalesOrderInput; warranty: WarrantyCaseInput } = JSON.parse(data);
-      const cust = resolveCustomerId(payload.order);
-      console.error(JSON.stringify({ customer: cust }));
-      console.log("=== PUSHING ORDER ===");
-      const orderResult = await pushSalesOrder(payload.order, cust.id);
-      console.log(JSON.stringify(orderResult, null, 2));
-      console.log("\n=== PUSHING WARRANTY ===");
-      const warrantyResult = await pushWarrantyCase(payload.warranty);
-      console.log(JSON.stringify(warrantyResult, null, 2));
-      process.exit(orderResult.success && warrantyResult.success ? 0 : 1);
-    }
-    default: showHelp(); process.exit(0);
   }
 }
 
