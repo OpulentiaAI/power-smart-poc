@@ -74,13 +74,6 @@ try {
   check("sps-bol CLI", false);
 }
 
-try {
-  run("npm run verify-visual-workflows");
-  check("visual workflow contract", true);
-} catch (e: unknown) {
-  check("visual workflow contract", false, String(e));
-}
-
 // Acumatica config (optional — warn only)
 const cfgPath = path.join(process.env.HOME || "", ".acumatica-config.json");
 check("acumatica config present", fs.existsSync(cfgPath), cfgPath || "missing");

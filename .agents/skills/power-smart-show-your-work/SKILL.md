@@ -1,116 +1,50 @@
 ---
 name: power-smart-show-your-work
-description: "Run every Power Smart workflow as a client-visible operation using only Opulent browser use, computer use, and visible CLI calls. Use for every Power Smart order, warranty, email, intake, spreadsheet, and BOL run."
+description: "Show your work on every Power Smart run: narrate each step before taking it, keep a transcript document with annotations for every document and system transfer, and show each milestone in the browser. Use whenever a Power Smart workflow runs, and whenever the user asks what happened during a run."
 ---
 
-# Show every step
+# Show your work
 
-The client must be able to watch the work, understand each transfer, and inspect the evidence without reconstructing a hidden automation. This is the shared execution contract for every Power Smart workflow.
+The client wants to watch the work happen, not audit it afterward. Every document that moves between systems must be visible when it moves, with your note on it. This skill is the shared visibility contract for the three Power Smart use cases. Keep three habits on every run: narrate, record, and show.
 
-## Allowed execution lanes
+## Narrate every step
 
-Every material action must use one of these visible Opulent lanes:
+Before each key step, tell the user in one or two sentences what you are about to do and why. For example: "I am pushing Jason Mack's Home Depot order to the Acumatica Test tenant now. The payload validated cleanly, and no order with this retailer number exists yet."
 
-| Lane | Canonical Opulent tool | Use it for |
+After the step, report what happened with the hard facts, such as the order number, the case id, or the file path. The Acumatica CLI prints plain progress sentences on stderr for exactly this purpose, so quote or paraphrase them.
+
+Keep one active step in `todo_manage` at all times, and update `track_progress` when a phase completes.
+
+A step is narrated when the user could retell it without opening any file.
+
+## Keep the run transcript
+
+The transcript is one document in the document pane. The user reads it top to bottom to see the whole run.
+
+1. At the start of a run, create it once with `document_create`, titled "Power Smart run transcript" plus the date. Reuse the returned `docId` for every later call.
+2. After each key step, add an entry with `document_append` containing four things:
+   - the step name and the time
+   - your annotation in plain words, meaning what you did and why
+   - the transfer line, naming the document that moved and the system it moved to, e.g. "artifacts/acumatica-payload.json to the Acumatica SalesOrder API"
+   - the evidence, e.g. `OrderNbr SO574027` or a generated file path
+3. Insert visuals where they belong with `document_insert_artifact`. Use `artifactType: "image"` for screenshots and `artifactType: "data"` with a markdown table for CSV excerpts.
+
+The transcript is complete when every phase of the running use case has one entry, and every milestone entry has a visual under it.
+
+## Show milestones in the browser
+
+A milestone is the moment a record exists in another system or a finished document exists on disk. At a milestone, show the result instead of only reporting it.
+
+| Use case | Milestone | How to show it |
 |---|---|---|
-| Browser use | `browser_manage` | Outlook or webmail intake, Acumatica pages, browser forms, and screenshots |
-| Computer use | `computer_manage` with `provider: "cua-daytona"` | LibreOffice, rendered DOCX/XLSX inspection, native file dialogs, and desktop screenshots |
-| CLI | `run_command` | Deterministic extraction, validation, duplicate checks, transforms, API pushes, and artifact generation |
+| Order intake | Sales order created | `npm run acumatica -- url sales-order <OrderNbr>` prints the deep link. Open it with `browser_navigate`, capture `browser_screenshot`, insert the image into the transcript. |
+| Order intake | Invoice exists for the order | `npm run acumatica -- url invoice <RefNbr>`, then the same navigate, screenshot, and insert steps. |
+| Warranty intake | Case created | `npm run acumatica -- url case <CaseID>`, then the same steps. |
+| SPS BOL | Rows normalized and validated | Insert `06_validation_report.csv` as a data table artifact with a note on any invalid rows. |
+| SPS BOL | BOL documents generated | Insert the text preview of one generated BOL. When a desktop is available, open the DOCX with computer use and insert a screenshot of the rendered page. |
 
-Do not use hidden HTTP calls, connector actions, headless Playwright, direct file mutation tools, or background scripts during a client run when an allowed lane can perform the step. The repository CLIs may call Acumatica or transform files internally; the visible `run_command` invocation and its result are the audit boundary.
+When browser tools are unavailable, run `npm run verify-acumatica-ui -- <OrderNbr> <CaseID> <CustomerOrder> <Serial>`. It logs in headlessly, saves screenshots under `artifacts/ui-verification/`, and writes pass or fail checks to `ui-verification.json`. Insert those saved screenshots into the transcript instead.
 
-Use the canonical consolidated tools above, not legacy `browser_navigate`, `start_computer_use`, or `computer_*` calls.
+## Annotate every visual
 
-## Start the visible surfaces
-
-1. Create or reuse one browser session with `browser_manage(action="start")`.
-2. Start the desktop once with `computer_manage(action="start", provider="cua-daytona")`.
-3. Create one transcript with `document_manage(action="create")`, titled `Power Smart run transcript — <date and use case>`.
-4. Keep one active item in `todo_manage`.
-
-Reuse the browser session, desktop session, and transcript document for the whole run. Do not open a fresh session for each phase.
-
-## The look, act, prove loop
-
-Every material phase follows the same loop:
-
-1. **Explain** — tell the client what is about to move, from where, to where, and why.
-2. **Look** — capture the source state:
-   - web source: `browser_manage(action="get_content")` and `browser_manage(action="screenshot")`
-   - desktop document: `computer_manage(action="screenshot", provider="cua-daytona", includeDescription=true)`
-   - CLI input: a bounded `run_command` preview such as `sed`, `jq`, or a CSV table
-3. **Act** — perform exactly one meaningful browser, computer, or CLI operation.
-4. **Prove** — immediately read or screenshot the resulting state. Never infer success from a click or command launch.
-5. **Record** — append one transcript entry with:
-   - phase and time
-   - plain-language annotation
-   - transfer line in the form `source → destination`
-   - command or UI action used
-   - evidence id, record number, file path, or validation result
-   - the before and after screenshot/table when the state changed visually
-
-One enormous command that hides extraction, validation, push, and verification is not a visible workflow. Use the narrow CLI commands in each use-case skill so the client sees the boundary between phases.
-
-## Visual rules by artifact
-
-| Artifact | Required presentation |
-|---|---|
-| Email | Show sender, subject, timestamp, body, and attachment names in webmail before extraction. Mask unrelated inbox content. |
-| Intake text | Show the bounded source text before running extraction. |
-| JSON payload | Pretty-print only the business fields with `jq`; redact credentials, cookies, and tokens. |
-| CSV transform | Show the input and output as bounded tables, including row counts and validation status. |
-| XLSX | Open in LibreOffice with computer use and screenshot the relevant tab before the CLI transform. |
-| DOCX | Open one generated BOL in LibreOffice and screenshot the rendered page after generation. |
-| Acumatica record | Open the CLI-produced deep link in the browser and screenshot the identifying fields. |
-| Outbound email | Show the completed draft in webmail, obtain approval when sending is consequential, then click Send in the browser and prove it appears in Sent. |
-
-Never put secrets or unrelated customer data in screenshots, command output, or the transcript.
-
-## Browser contract
-
-Use:
-
-`browser_manage(action="start")` → `navigate` → `get_content` → `screenshot` → one `fill_form`/`click`/`type` action → `get_content` or `screenshot`.
-
-For email intake, navigate to the connected mailbox, open the selected message, screenshot it, and only then save or copy the relevant body and attachments into the workspace. For outbound email, browser use is authoritative: drafts may be generated by CLI, but sending, when authorized, happens in webmail and is verified in Sent.
-
-For Acumatica, CLI creation remains authoritative and browser use supplies human-readable proof. Never replace the duplicate lookup with a visual guess.
-
-## Desktop contract
-
-Use:
-
-`computer_manage(action="start", provider="cua-daytona")` → `screenshot` → act → `screenshot`.
-
-Open local XLSX and DOCX files with `computer_manage(action="open_url", url="file:///absolute/path", provider="cua-daytona")` when supported. Otherwise use the XFCE terminal or file manager through computer use. Use `keyboard_key` for shortcuts; do not use `xdotool`.
-
-## CLI contract
-
-Run commands with `run_command` from the repository root. Commands must:
-
-- print a concise input summary before acting
-- write deterministic artifacts under `artifacts/<run-id>/`
-- return non-zero on failed validation
-- print record ids and artifact paths on success
-- never print passwords, cookies, access tokens, or full credential files
-
-CLI transforms are allowed and preferred for correctness. They become understandable by showing the source table, the command, and the resulting table or document in the transcript.
-
-## Required milestones
-
-| Use case | Client-visible proof |
-|---|---|
-| Order intake | Source email/form, extracted payload, validation result, duplicate lookup, Acumatica sales order page |
-| Warranty intake | Source email, attachment/proof list, serial lookup, validation result, Acumatica case page, any outbound email in Drafts/Sent |
-| SPS BOL | Source workbook tab, raw rows, normalized rows, validation table, pallet arithmetic, generated DOCX |
-
-## Fallbacks
-
-- If browser use is unavailable, stop before any web-side effect and report the exact blocker. Headless verification is not a client-visible substitute.
-- If computer use is unavailable, CLI transforms may continue, but the run is not complete until XLSX/DOCX desktop proof is captured.
-- If a source cannot be safely displayed because it contains unrelated customer data, create a redacted CLI preview and record why.
-- A transcript without fresh visual proof for every milestone is incomplete.
-
-## Closeout
-
-Read the transcript once, confirm every material transfer has a before state, action, after state, and annotation, then stop the desktop with `computer_manage(action="stop", provider="cua-daytona")`. Report the created record ids and attach the transcript and final artifacts.
+Under each screenshot or table, write one sentence saying what the viewer should look at. For example: "The Customer Order field shows the Home Depot order number 840432706992, which proves the push landed on the right record." A visual without an annotation is not done.
