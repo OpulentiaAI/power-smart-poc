@@ -44,17 +44,38 @@ Insert the scene's screenshot, table, or rendered file directly below that card 
 
 1. Read the matching production skill.
 2. Confirm the real credentials and source files are available without exposing them.
-3. Generate a cue sheet:
+3. Prepare Acumatica credentials without sourcing the intake `.env` file:
+
+```bash
+npm run demo:acumatica:prepare -- --env-file intake-pack/credentials/acumatica-sandbox.env
+```
+
+The source may contain an unquoted Acumatica login URL with parentheses and is not shell-sourceable. Reuse the safe `HOME=… ACUMATICA_CONFIG=…` prefix printed by the command. Never print the resulting config.
+
+Use that prefix to run `npm run --silent acumatica -- login`, then `status`. Continue only when status is `connected`.
+
+4. Generate a cue sheet:
 
 ```bash
 npm run demo:cue-sheet -- --workflow <order|warranty|sps-bol> --run-id <slug>
 ```
 
-4. Read `artifacts/illustrated-demo/<run-id>/cue-sheet.json`.
-5. Create the evidence-ribbon document and paste the generated `storyboard.md` opening into it.
-6. Start one browser session with `browser_manage(action="start")`.
-7. Start one desktop with `computer_manage(action="start", provider="cua-daytona")` when the cue sheet uses the document camera.
-8. Pre-open the source tab or file, but do not perform the production side effect before the demo.
+For a create-path rehearsal using the golden intake, generate transparent unique identifiers instead of reusing the known duplicate sample:
+
+```bash
+npm run demo:payload -- --input fixtures/sample-order-intake.txt \
+  --run-id <slug> --unique
+```
+
+For a real inbound customer request, preserve its identifiers and obey the normal duplicate branch.
+
+5. Start the Dither Kit dashboard with `npm run demo:dashboard` and open its preview in the browser.
+6. Initialize it with `npm run demo:dashboard:update -- --workflow <workflow> --run-id <slug>`.
+7. Read `artifacts/illustrated-demo/<run-id>/cue-sheet.json`.
+8. Create the evidence-ribbon document and paste the generated `storyboard.md` opening into it.
+9. Start one browser session with `browser_manage(action="start")`.
+10. Start one desktop with `computer_manage(action="start", provider="cua-daytona")` when the cue sheet uses the document camera.
+11. Pre-open the source tab or file, but do not perform the production side effect before the demo.
 
 The cue sheet is a stage manager, not an executor. The agent still performs every real action and verifies every result.
 
@@ -67,9 +88,26 @@ Every scene has four beats:
 3. **Action** — perform one real production step.
 4. **Proof** — show the changed state with a different camera when possible and add it to the ribbon.
 
+Bracket every scene with dashboard updates:
+
+```bash
+npm run demo:dashboard:update -- --workflow <workflow> --run-id <slug> \
+  --scene <id> --status running --message "<business action>"
+
+npm run demo:dashboard:update -- --workflow <workflow> --run-id <slug> \
+  --scene <id> --status success --evidence "<verified outcome>" \
+  --record-id "<optional system id>" --artifact "<optional artifact path>"
+```
+
+Use `--status blocked` when a gate fails. The dashboard must never claim success before fresh proof exists.
+
 Prefer camera changes over narration. Example: show the email in Outlook, cut to the CLI extraction table, then cut to the document ribbon with highlighted fields. This makes the transformation legible without pretending the CLI is a human interface.
 
 Do not run multiple production phases in one giant command during a demo. Use the narrowest existing command that preserves the production contract.
+
+When capturing Acumatica JSON, use `npm run --silent acumatica -- …`; ordinary `npm run` adds banner lines and makes redirected output invalid JSON.
+
+Write every redirected lookup and push result under `artifacts/illustrated-demo/<run-id>/`. Do not link `/tmp` evidence into the dashboard or evidence ribbon.
 
 ## Visual language
 
@@ -132,6 +170,7 @@ Use the SPS cue sheet and the production SPS skill.
 - Use real credentials from the approved local configuration or connected browser session.
 - Never display credential files, passwords, cookies, tokens, or browser storage.
 - Before every screenshot, check for unrelated inbox rows, tabs, notifications, or customer data.
+- Dismiss Chrome's password-save prompt immediately after login; it obscures the first Acumatica proof scene.
 - Redact with a generated preview rather than editing the source.
 - Real side effects obey the production skill's duplicate checks and human-approval rules.
 
@@ -147,5 +186,6 @@ Use the SPS cue sheet and the production SPS skill.
 - The original production skill ran without changed semantics.
 - Every cue-sheet scene has a question, live action, and fresh proof.
 - The evidence ribbon contains at least one browser image, one CLI-derived table, and one desktop image when documents are involved.
+- The Dither Kit dashboard reaches the same terminal state and shows scene success, system evidence, ids, and conservative projected labor time saved.
 - All real record ids and generated files are linked in the closing card.
 - The client can distinguish source data, gating decisions, and committed outcomes at a glance.

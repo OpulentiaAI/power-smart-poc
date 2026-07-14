@@ -8,6 +8,10 @@
     "sps-bol": "tsx scripts/sps-commerce/cli.ts",
     "pipeline": "tsx scripts/acumatica/pipeline.ts",
     "demo:cue-sheet": "tsx scripts/illustrated-demo/cue-sheet.ts",
+    "demo:acumatica:prepare": "tsx scripts/illustrated-demo/prepare-acumatica.ts",
+    "demo:payload": "tsx scripts/illustrated-demo/prepare-live-payload.ts",
+    "demo:dashboard": "npm --prefix demo-dashboard run dev -- --host 0.0.0.0",
+    "demo:dashboard:update": "tsx scripts/illustrated-demo/dashboard-state.ts",
     "verify-illustrated-demo": "tsx scripts/verify-illustrated-demo.ts",
     "verify-automation": "tsx scripts/verify-automation.ts",
     "verify-acumatica-ui": "node scripts/verify-acumatica-ui.mjs"
