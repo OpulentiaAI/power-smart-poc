@@ -33,7 +33,7 @@ const scenes: Record<Workflow, Scene[]> = {
     scene("03", "The registration gate", "cli", "Is this serial already registered?", "Show the serial selected for lookup.", "Run lookup-warranty before creation.", "Missing result, or existing CaseID and a stop.", "amber", 5, 1),
     scene("04", "One case is committed", "cli", "What enters Acumatica?", "Show the bounded warranty payload.", "Run the production push-warranty command.", "Successful result with CaseID.", "green", 7, 1),
     scene("05", "The case is visible", "browser", "Does Acumatica show the same claim?", "Open the CLI-produced case deep link.", "Navigate to the case record.", "Screenshot of CaseID, subject, serial, and severity.", "green", 4, 1),
-    scene("06", "The response is staged", "browser", "What will the customer receive next?", "Show the generated response as a webmail draft.", "Send only when explicitly authorized.", "Draft screenshot and, if sent, proof in Sent.", "blue", 8, 2),
+    scene("06", "The response is staged", "browser", "What would the customer receive next?", "Show the generated response as a webmail draft.", "Demonstration only: compose the draft and never send it.", "Draft screenshot labeled DEMONSTRATION ONLY — NOT SENT.", "blue", 8, 2),
   ],
   "sps-bol": [
     scene("01", "The shipping sheet", "desktop", "What rows did SPS provide?", "Open the XLSX in LibreOffice on the relevant sheet.", "Frame headers and populated rows.", "Fresh source-workbook screenshot.", "blue", 8, 1),

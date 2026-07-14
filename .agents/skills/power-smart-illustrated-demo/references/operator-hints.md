@@ -43,6 +43,7 @@ When redirecting Acumatica JSON, use `npm run --silent acumatica -- …`; npm's 
 
 - Do not `source intake-pack/credentials/acumatica-sandbox.env`; its login URL may contain unquoted parentheses. Run `demo:acumatica:prepare`.
 - Dismiss Chrome's save-password bubble before the first proof screenshot.
+- Demonstration email must be composed and shown, then left unsent. Never click Send; record `DEMONSTRATION ONLY — NOT SENT`.
 - Acumatica case deep links use `CaseCD`, not `CaseID`.
 - The golden order and serial may already have duplicates. A successful duplicate gate can branch to existing-record proof; never push anyway.
 - To rehearse the full create path, use `demo:payload -- --unique`; do not hand-edit identifiers or reuse the golden payload.

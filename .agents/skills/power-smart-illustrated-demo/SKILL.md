@@ -7,6 +7,8 @@ description: "Direct a live, illustrative Power Smart client demo using real cre
 
 This is a demonstration director, not a second automation engine. Run the real Power Smart commands and real web systems, but choreograph them so a client can understand the workflow as it happens.
 
+**Demonstration email rule:** composing and displaying the customer email is required; sending it is forbidden. The demonstration must show the draft and mark it `preview-only / not sent`.
+
 The production skills remain authoritative:
 
 - [order intake](../power-smart-order-intake/SKILL.md)
@@ -153,7 +155,7 @@ Use the warranty cue sheet and the production warranty skill.
 4. **Safety reveal:** run `lookup-warranty` before creation.
 5. **Commit:** run `push-warranty` with real credentials.
 6. **Browser proof:** open the Acumatica case and highlight case id, subject, serial, and severity.
-7. **Optional response:** generate the response body with CLI, compose it in webmail with browser use, show the draft in the ribbon, and send only when the demo authority explicitly includes sending. Prove Sent state.
+7. **Demonstration response:** generate the response body with CLI, compose it in webmail with browser use, and show the completed draft in the ribbon. Do not click Send. Add `DEMONSTRATION ONLY — NOT SENT` to the scene card and dashboard evidence.
 
 ## SPS BOL performance
 
@@ -173,6 +175,7 @@ Use the SPS cue sheet and the production SPS skill.
 - Dismiss Chrome's password-save prompt immediately after login; it obscures the first Acumatica proof scene.
 - Redact with a generated preview rather than editing the source.
 - Real side effects obey the production skill's duplicate checks and human-approval rules.
+- Email is the exception in illustration mode: never send it, even when production credentials are available.
 
 ## Recovery without breaking the story
 
@@ -187,5 +190,6 @@ Use the SPS cue sheet and the production SPS skill.
 - Every cue-sheet scene has a question, live action, and fresh proof.
 - The evidence ribbon contains at least one browser image, one CLI-derived table, and one desktop image when documents are involved.
 - The Dither Kit dashboard reaches the same terminal state and shows scene success, system evidence, ids, and conservative projected labor time saved.
+- The email scene ends with a visible draft and explicit `preview-only / not sent` evidence.
 - All real record ids and generated files are linked in the closing card.
 - The client can distinguish source data, gating decisions, and committed outcomes at a glance.

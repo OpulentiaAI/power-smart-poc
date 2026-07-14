@@ -12,3 +12,5 @@ dist/
 ~/.acumatica-*.txt
 /tmp/
 /artifacts/illustrated-demo/
+/workflow-environments/production/runtime/
+/workflow-environments/demonstration/runtime/

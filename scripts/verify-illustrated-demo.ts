@@ -32,6 +32,8 @@ for (const required of [
   "demo:dashboard:update",
   "demo:acumatica:prepare",
   "Dither Kit dashboard",
+  "sending it is forbidden",
+  "DEMONSTRATION ONLY — NOT SENT",
 ]) {
   if (!skill.toLowerCase().includes(required.toLowerCase())) {
     failures.push(`illustrated-demo skill is missing ${JSON.stringify(required)}`);

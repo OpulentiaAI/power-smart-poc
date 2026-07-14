@@ -13,6 +13,8 @@
     "demo:dashboard": "npm --prefix demo-dashboard run dev -- --host 0.0.0.0",
     "demo:dashboard:update": "tsx scripts/illustrated-demo/dashboard-state.ts",
     "verify-illustrated-demo": "tsx scripts/verify-illustrated-demo.ts",
+    "workflows:prepare": "tsx scripts/prepare-workflow-environments.ts",
+    "verify-workflow-environments": "tsx scripts/verify-workflow-environments.ts",
     "verify-automation": "tsx scripts/verify-automation.ts",
     "verify-acumatica-ui": "node scripts/verify-acumatica-ui.mjs"
   },
