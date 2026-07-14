@@ -8,6 +8,7 @@
     "sps-bol": "tsx scripts/sps-commerce/cli.ts",
     "pipeline": "tsx scripts/acumatica/pipeline.ts",
     "verify-automation": "tsx scripts/verify-automation.ts",
+    "verify-visual-workflows": "tsx scripts/verify-visual-workflows.ts",
     "verify-acumatica-ui": "node scripts/verify-acumatica-ui.mjs"
   },
   "dependencies": {

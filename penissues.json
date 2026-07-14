@@ -1,0 +1,17 @@
+[
+  {
+    "syncStatus": "Local Pending Sync",
+    "title": "Power Smart pipeline hides push before duplicate check",
+    "team": "Opulent",
+    "priority": "High",
+    "labels": [
+      "Bug"
+    ],
+    "description": "`npm run pipeline` hardcodes the golden intake and immediately calls `push-both`, while the workflow skills describe duplicate lookup and explicit pushes afterward. A visual run can therefore hide a side effect inside extraction and create duplicate records before the documented duplicate check. Add file input and `--prepare-only`, use it before lookup, and retain explicit visible pushes.",
+    "evidence": [
+      "scripts/acumatica/pipeline.ts parsed SAMPLE_ORDER_TEXT and invoked push-both in phase 4",
+      ".agents/skills/power-smart-order-intake/SKILL.md instructed the agent to run pipeline before duplicate lookup"
+    ],
+    "linearSyncError": "Linear free issue limit exceeded on 2026-07-14"
+  }
+]

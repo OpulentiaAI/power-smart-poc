@@ -17,7 +17,7 @@ import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-// ─── Sample Data ─────────────────────────────────────────────────────
+// ─── Input ───────────────────────────────────────────────────────────
 
 const SAMPLE_ORDER_TEXT = `Your Name: Jason Mack
 Phone: +19053755421
@@ -32,6 +32,15 @@ Address: 143A Balls Lane Cobourg ON K9A2L4
 Purchase Proof:
 
 17785367597992882103857233052183.jpg`;
+
+function argValue(args: string[], name: string): string | undefined {
+  const index = args.indexOf(name);
+  return index === -1 ? undefined : args[index + 1];
+}
+
+const cliArgs = process.argv.slice(2);
+const inputPath = argValue(cliArgs, "--input");
+const prepareOnly = cliArgs.includes("--prepare-only");
 
 // ─── Pipeline ────────────────────────────────────────────────────────
 
@@ -68,9 +77,14 @@ async function runPipeline(): Promise<void> {
   console.log("╚═══════════════════════════════════════════════════════════╝\n");
 
   // ── Phase 1: Structured Extraction ──────────────────────────────
-  console.log("[1/5] Extracting order from structured text...");
+  const sourceText = inputPath
+    ? fs.readFileSync(path.resolve(inputPath), "utf8")
+    : SAMPLE_ORDER_TEXT;
+  const sourceLabel = inputPath ? path.resolve(inputPath) : "built-in golden sample";
+
+  console.log(`[1/5] Extracting order from ${sourceLabel}...`);
   const t1 = Date.now();
-  const extraction = parseStructuredOrder(SAMPLE_ORDER_TEXT);
+  const extraction = parseStructuredOrder(sourceText);
   const r1 = recordResult(
     "extraction",
     extraction.success,
@@ -145,10 +159,16 @@ async function runPipeline(): Promise<void> {
   console.log(`  ✓ Payloads written to artifacts/acumatica-payload.json`);
 
   // ── Phase 4: Push to Acumatica ──────────────────────────────────
-  console.log("\n[4/5] Pushing to Acumatica...");
+  console.log(`\n[4/5] ${prepareOnly ? "Skipping Acumatica push (--prepare-only)..." : "Pushing to Acumatica..."}`);
   const t4 = Date.now();
 
-  try {
+  if (prepareOnly) {
+    const r4 = recordResult("push_to_acumatica", true, {
+      skipped: true,
+      reason: "--prepare-only",
+    });
+    r4.durationMs = Date.now() - t4;
+  } else try {
     const pushResult = execSync(
       `cat "${payloadPath}" | npm run acumatica -- push-both`,
       {
