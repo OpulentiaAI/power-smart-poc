@@ -18,6 +18,10 @@ interface Manifest {
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "power-smart-environments-"));
 const failures: string[] = [];
+const rootSkill = fs.readFileSync(path.join(repoRoot, "SKILL.md"), "utf8").trim().split(/\r?\n/);
+if (rootSkill.length > 4 || !rootSkill.join("\n").includes("Never read from the sibling runtime")) {
+  failures.push("root SKILL.md is missing or exceeds the four-line scenario router contract");
+}
 
 try {
   const output = execFileSync(
