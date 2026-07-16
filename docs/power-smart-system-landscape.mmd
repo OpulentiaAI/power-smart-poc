@@ -1,0 +1,82 @@
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 28, "rankSpacing": 42}}}%%
+flowchart TB
+  subgraph S["Source systems and channels"]
+    direction LR
+    RET["Retail order channels<br/>Home Depot, Amazon, Walmart"]
+    WAR["Warranty intake<br/>website form, email, phone"]
+    SPS["SPS Commerce<br/>exported order workbook"]
+    TPL["Microsoft Word<br/>BOL template"]
+  end
+
+  subgraph A["Power Smart automation"]
+    direction TB
+    subgraph OW["Order and warranty path"]
+      direction LR
+      IN["Structured intake<br/>text or JSON"]
+      EXT["Extract and normalize"]
+      VAL{"Validate"}
+      ART[("Local artifacts<br/>JSON, CSV, DOCX, PNG")]
+      DUP{"Duplicate lookup"}
+      MAP["Map customer,<br/>order, and case"]
+      IN --> EXT --> VAL
+      VAL -->|"valid or escalated"| ART
+      ART -->|"order number or serial"| DUP
+      DUP -->|"no existing record"| MAP
+    end
+    subgraph BW["SPS BOL path"]
+      direction LR
+      BOL["Read workbook<br/>normalize and validate"]
+      MERGE["Merge DOCX<br/>and run QA"]
+      BOL -->|"CSV artifacts"| ART
+      ART -->|"valid BOL rows"| MERGE
+      MERGE -->|"DOCX, preview, QA"| ART
+    end
+    CVX[("Convex data model<br/>orders, cases, audit log")]
+  end
+
+  subgraph ACU["Acumatica Test tenant"]
+    direction LR
+    AUTH["Authentication<br/>OAuth or cookie session"]
+    API["Contract-Based REST API<br/>v22.200.001"]
+    SO[("Sales Order<br/>SO301000")]
+    CASE[("Warranty Case<br/>CR306000")]
+    UI["Browser and Playwright<br/>checks and screenshots"]
+    AUTH -->|"token or cookie"| API
+    API -->|"PUT SalesOrder"| SO
+    API -->|"PUT Case"| CASE
+    SO --> UI
+    CASE --> UI
+  end
+
+  subgraph E["Evidence and operator control"]
+    direction LR
+    HUMAN{"Human decision<br/>correct, stop, or escalate"}
+    TRANS["Run transcript<br/>annotations and transfer evidence"]
+    HUMAN --> TRANS
+  end
+
+  RET -->|"structured text or JSON"| IN
+  WAR -->|"claim fields and proof reference"| IN
+  VAL -->|"missing or unsafe"| HUMAN
+  DUP -->|"record found"| HUMAN
+  SPS -->|"XLSX: Sheet1 and Sheet2"| BOL
+  TPL -->|"DOCX merge fields"| MERGE
+  MAP -->|"wrapped JSON"| API
+  UI -->|"IDs, checks, screenshots"| ART
+  ART --> TRANS
+  UI --> TRANS
+
+  IN -. "schema exists;<br/>not currently called" .-> CVX
+  SPS -. "optional bearer setup;<br/>no API call in generation" .-> BOL
+
+  classDef source fill:#eef4ff,stroke:#3b66a0,color:#10233f;
+  classDef automation fill:#eaf7f1,stroke:#2b7a5b,color:#143d2f;
+  classDef external fill:#fff3dd,stroke:#a36b12,color:#4b320d;
+  classDef evidence fill:#f5efff,stroke:#7653a6,color:#35224f;
+  classDef inactive fill:#f2f2f2,stroke:#777,color:#333,stroke-dasharray: 6 4;
+
+  class RET,WAR,SPS,TPL source;
+  class IN,EXT,VAL,ART,DUP,MAP,BOL,MERGE automation;
+  class AUTH,API,SO,CASE,UI external;
+  class HUMAN,TRANS evidence;
+  class CVX inactive;
