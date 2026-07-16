@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "mode": "illustration",
+  "workflow": "order",
+  "runId": "standby",
+  "title": "Power Smart illustrated workflow",
+  "status": "ready",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "startedAt": "2026-07-14T00:00:00.000Z",
+  "scenes": [],
+  "recordIds": [],
+  "artifacts": [],
+  "events": [
+    {
+      "at": "2026-07-14T00:00:00.000Z",
+      "status": "ready",
+      "message": "Waiting for a cue sheet."
+    }
+  ]
+}

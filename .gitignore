@@ -3,6 +3,7 @@ dist/
 .env
 .env.local
 *.log
+*.tsbuildinfo
 .DS_Store
 /opulent/workspace/.opulent/
 /opulent/workspace/.opulentia/
@@ -10,3 +11,6 @@ dist/
 ~/.acumatica-*.json
 ~/.acumatica-*.txt
 /tmp/
+/artifacts/illustrated-demo/
+/workflow-environments/production/runtime/
+/workflow-environments/demonstration/runtime/

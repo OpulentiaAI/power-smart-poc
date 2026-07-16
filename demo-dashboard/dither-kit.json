@@ -1,0 +1,170 @@
+{
+  "$schema": "https://tripwire.sh/schema/dither-kit.json",
+  "lockfileVersion": 1,
+  "registry": "https://tripwire.sh",
+  "mode": "source",
+  "components": {
+    "area-chart": {
+      "version": "0.1.0",
+      "hash": "sha256:7de0969737cd49a29c8323da67a4d1f3654126cf572d6ead9181495c800c4727",
+      "files": [
+        {
+          "path": "components/dither-kit/area-chart.tsx",
+          "hash": "sha256:307883b537e005386a8090499eaf3ea636767a10235271181cb089c3477eab1e"
+        },
+        {
+          "path": "components/dither-kit/area.tsx",
+          "hash": "sha256:ecfb990f9083dd4c813eb431e3674822b7272076294de4ae038e81552d678532"
+        },
+        {
+          "path": "components/dither-kit/cartesian-canvas.tsx",
+          "hash": "sha256:d15da6415936763b16934321292ec837d2a2991da81e6a45c9656ddf4839bdc7"
+        },
+        {
+          "path": "components/dither-kit/sparkline.tsx",
+          "hash": "sha256:b5dab0b68af7ebc976ec51a74776761ac26d79f4aacd9c453a6e79c49e8d11ff"
+        }
+      ]
+    },
+    "avatar": {
+      "version": "0.1.0",
+      "hash": "sha256:c7a639c023dcfb9f1365f11de35986d265de494b60c1887807aedf6504acf0cd",
+      "files": [
+        {
+          "path": "components/dither-kit/avatar.tsx",
+          "hash": "sha256:bf9736b474a5e050b19b23fb4d858924758d6df1d0a1006eed95f1fc42b84cb5"
+        },
+        {
+          "path": "components/dither-kit/lib.ts",
+          "hash": "sha256:41493601eb53a70f7629f6e50bad233f7185eaad42ba2397ca56ac1afcf1bb5f"
+        },
+        {
+          "path": "components/dither-kit/palette.ts",
+          "hash": "sha256:fd020c230ad818a5d9d6dfdfcb6ef50b0dba012c77f44f1a61449fc9a65947f7"
+        },
+        {
+          "path": "components/dither-kit/pixel.ts",
+          "hash": "sha256:eea1493d54a86d164b40d69c95956238777331ded7a556f099230dab161ab5a7"
+        }
+      ]
+    },
+    "bar-chart": {
+      "version": "0.1.0",
+      "hash": "sha256:126e0fc18e9b01bafd5fc628c5887d42b1cc83070de8cee3cfe5025f3b93a5b0",
+      "files": [
+        {
+          "path": "components/dither-kit/bar-canvas.tsx",
+          "hash": "sha256:fb5477e5e3cf88840fe28288cc66cdcff64582ad3b934a592d302df7c5dec8c3"
+        },
+        {
+          "path": "components/dither-kit/bar-chart.tsx",
+          "hash": "sha256:e19ce3540f15756aba615eb19072aeec81d8ac71e51219691cc1d0be004c18bb"
+        },
+        {
+          "path": "components/dither-kit/bar.tsx",
+          "hash": "sha256:2904ff1b0813ae20b976f5a78d57a314729ea3e890b18ba762bbb46d2f550057"
+        }
+      ]
+    },
+    "core": {
+      "version": "0.1.0",
+      "hash": "sha256:9b00e3c7aecc6989c951dcacab643c6e887e83863395b7a999adcc61c322cb5f",
+      "files": [
+        {
+          "path": "components/dither-kit/cartesian-root.tsx",
+          "hash": "sha256:6b5297d75de22ae5a0fc1960bef0419a4984b54ff493e7acd527aa0ccb150098"
+        },
+        {
+          "path": "components/dither-kit/chart-context.tsx",
+          "hash": "sha256:2bfbdf15e2a5f4545bdbaae3391f1eb18c73fb401815d09549d43fec5970fd9d"
+        },
+        {
+          "path": "components/dither-kit/common-context.tsx",
+          "hash": "sha256:aafb26404977148144a3d81da81a678d5956e14024f394ccdc7ae881dd07e52a"
+        },
+        {
+          "path": "components/dither-kit/dither-paint.ts",
+          "hash": "sha256:1bcd3d7de3ae3091caf63ed4c2c862d80d1899c9b55a70078acb12f7b44e51c7"
+        },
+        {
+          "path": "components/dither-kit/dot.tsx",
+          "hash": "sha256:207bf90662237064940d14a4d8411135d75027b97a9582c0e61c8af74ea5d65a"
+        },
+        {
+          "path": "components/dither-kit/grid.tsx",
+          "hash": "sha256:ad09d80b3898a4d3f588ff1f2f4f82984864c3918cb09d31350be6ac18d2446f"
+        },
+        {
+          "path": "components/dither-kit/legend.tsx",
+          "hash": "sha256:c770d87004b130c92876ff16a018cb8c048b3ab43f5a2d93aaef836451c11c74"
+        },
+        {
+          "path": "components/dither-kit/lib.ts",
+          "hash": "sha256:41493601eb53a70f7629f6e50bad233f7185eaad42ba2397ca56ac1afcf1bb5f"
+        },
+        {
+          "path": "components/dither-kit/palette.ts",
+          "hash": "sha256:fd020c230ad818a5d9d6dfdfcb6ef50b0dba012c77f44f1a61449fc9a65947f7"
+        },
+        {
+          "path": "components/dither-kit/polar-context.tsx",
+          "hash": "sha256:514ac9a4984b036598a14ecd7acc29ee121e9259c8a85309d7ed3c1e22af6831"
+        },
+        {
+          "path": "components/dither-kit/polar-root.tsx",
+          "hash": "sha256:63cecb6193ce3cd296b93b018e2441ccdefcc055cdc31bf131c808f0cf0c0c52"
+        },
+        {
+          "path": "components/dither-kit/polar.ts",
+          "hash": "sha256:3ad3f99bac2ee21e6580abd6903720af11cedcb8d8c69a06c40690be6229672c"
+        },
+        {
+          "path": "components/dither-kit/scales.ts",
+          "hash": "sha256:8604cf8241b5650ee55cdf8705638a0784ae075f777356ee8c132ad70c577ef3"
+        },
+        {
+          "path": "components/dither-kit/series-context.tsx",
+          "hash": "sha256:1802f1f488cc46542294f533c55fae03a4b067feca0761df75ce21de8a6a429a"
+        },
+        {
+          "path": "components/dither-kit/tooltip.tsx",
+          "hash": "sha256:d053ac2135c6f29d011cb0a83be29a797f8954ccbb02916402d2d3c2a52b17f2"
+        },
+        {
+          "path": "components/dither-kit/use-chart-dimensions.ts",
+          "hash": "sha256:74b7f2a08cce5b891348eed845fc8c218ed16fce362ef4f35587ec4cc864c834"
+        },
+        {
+          "path": "components/dither-kit/x-axis.tsx",
+          "hash": "sha256:7997bd96c341816a0f1cc6f966ad386fedc78be39e51201fa368dab1fd943d62"
+        },
+        {
+          "path": "components/dither-kit/y-axis.tsx",
+          "hash": "sha256:96d8cad3d7ca87a2a6f092399a60ba2f32612413a190f2885da67854229cdeff"
+        }
+      ]
+    },
+    "gradient": {
+      "version": "0.1.0",
+      "hash": "sha256:25f54f9db394e0392fc661e86f8d087ec84450eaf7cf3759c88bc4c6e2d83b7f",
+      "files": [
+        {
+          "path": "components/dither-kit/gradient.tsx",
+          "hash": "sha256:c5cfeaff9b5cfe88cf963109c679dc8202d2543d277e11c346f8d02c2a67dfcd"
+        },
+        {
+          "path": "components/dither-kit/lib.ts",
+          "hash": "sha256:41493601eb53a70f7629f6e50bad233f7185eaad42ba2397ca56ac1afcf1bb5f"
+        },
+        {
+          "path": "components/dither-kit/palette.ts",
+          "hash": "sha256:fd020c230ad818a5d9d6dfdfcb6ef50b0dba012c77f44f1a61449fc9a65947f7"
+        },
+        {
+          "path": "components/dither-kit/pixel.ts",
+          "hash": "sha256:eea1493d54a86d164b40d69c95956238777331ded7a556f099230dab161ab5a7"
+        }
+      ]
+    }
+  }
+}

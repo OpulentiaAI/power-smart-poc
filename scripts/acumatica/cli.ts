@@ -195,7 +195,7 @@ const SCREENS: Record<string, { screenId: string; label: string; param?: (id: st
   "case": {
     screenId: "CR306000",
     label: "Cases entry screen",
-    param: (id) => `CaseID=${encodeURIComponent(id)}`,
+    param: (id) => `CaseCD=${encodeURIComponent(id)}`,
   },
 };
 

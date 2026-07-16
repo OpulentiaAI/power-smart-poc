@@ -1,0 +1,47 @@
+[
+  {
+    "syncStatus": "Local Pending Sync",
+    "title": "Power Smart pipeline hides push before duplicate check",
+    "team": "Opulent",
+    "priority": "High",
+    "labels": [
+      "Bug"
+    ],
+    "description": "`npm run pipeline` hardcodes the golden intake and immediately calls `push-both`, while the workflow skills describe duplicate lookup and explicit pushes afterward. A visual run can therefore hide a side effect inside extraction and create duplicate records before the documented duplicate check. Add file input and `--prepare-only`, use it before lookup, and retain explicit visible pushes.",
+    "evidence": [
+      "scripts/acumatica/pipeline.ts parsed SAMPLE_ORDER_TEXT and invoked push-both in phase 4",
+      ".agents/skills/power-smart-order-intake/SKILL.md instructed the agent to run pipeline before duplicate lookup"
+    ],
+    "linearSyncError": "Linear free issue limit exceeded on 2026-07-14"
+  },
+  {
+    "syncStatus": "Local Pending Sync",
+    "title": "SPS BOL renders pallet flag instead of numeric pallet count",
+    "team": "Opulent",
+    "priority": "Medium",
+    "labels": [
+      "Bug"
+    ],
+    "description": "The live SPS rehearsal computes six pallets for SID 232161177 in 09_bol_arithmetic.csv, but the generated BOL renders PALLET/SLIP as Y/N rather than showing the numeric pallet count. The illustrated workflow can prove the arithmetic separately, but the client-facing document does not carry the computed count.",
+    "evidence": [
+      "artifacts/illustrated-demo/live-sps-rehearsal/output/09_bol_arithmetic.csv",
+      "artifacts/illustrated-demo/live-sps-rehearsal/output/generated_bols/SID_232161177_1134488129.docx"
+    ],
+    "linearSyncError": "Linear free issue limit exceeded on 2026-07-14"
+  },
+  {
+    "syncStatus": "Local Pending Sync",
+    "title": "Demo Acumatica credential is duplicated in tracked source files",
+    "team": "Opulent",
+    "priority": "High",
+    "labels": [
+      "Security"
+    ],
+    "description": "The credential safety scan found the Acumatica demo password duplicated outside the permission-restricted intake credential file. Rotate the demo credential and replace tracked literals with environment/config references.",
+    "evidence": [
+      "TESTING.md",
+      "scripts/acumatica/setup-connected-app.mjs"
+    ],
+    "linearSyncError": "Linear free issue limit exceeded on 2026-07-14"
+  }
+]
