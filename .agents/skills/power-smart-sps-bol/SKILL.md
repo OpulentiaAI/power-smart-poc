@@ -62,7 +62,7 @@ These are the milestones for this use case. In the transcript:
 
 1. Insert `06_validation_report.csv` as a data table artifact. Annotate the count of valid rows and name any missing fields on invalid rows. A required field that is empty means the source row must be fixed in the workbook and the generate step run again.
 2. Insert `09_bol_arithmetic.csv` as a data table artifact. Annotate whether each store's pallet count matches the expected value.
-3. Insert the text preview of at least one generated BOL from `previews/`, and annotate the ship to name, the PO, and the BOL number. When a desktop is available, open the DOCX itself with computer use and insert a screenshot of the rendered page.
+3. Insert the text preview of at least one generated BOL from `previews/`, and annotate the ship to name, the PO, and the BOL number. Copy the exact `preview_text` path from `07_output_manifest.csv`; never synthesize numbered aliases such as `previews/01_bol_preview.txt`, because preview filenames are derived from each BOL and PO. When a desktop is available, open the DOCX itself with computer use and insert a screenshot of the rendered page.
 
 This phase is done when all three visuals are in the transcript with annotations.
 
